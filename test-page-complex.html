@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Application de gestion d'entreprise - Dashboard principal">
+    <meta name="keywords" content="dashboard, gestion, entreprise, CRM">
+    <title>Dashboard Entreprise - Test Phase 4</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        nav {
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+            padding: 0 2rem;
+        }
+        
+        .breadcrumb {
+            padding: 1rem 0;
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .breadcrumb a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        .nav-menu a {
+            display: block;
+            padding: 1rem 0;
+            color: #495057;
+            text-decoration: none;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .nav-menu a.active {
+            color: #007bff;
+            border-bottom-color: #007bff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .widget {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+        
+        .widget h3 {
+            margin-bottom: 1rem;
+            color: #495057;
+            font-size: 1.125rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        
+        .table-header {
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+        
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 999;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        
+        .sidebar.show {
+            right: 0;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #28a745;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: none;
+        }
+        
+        .notification.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e9ecef;
+            border-top: 2px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header avec informations utilisateur -->
+    <header class="header">
+        <div class="logo">🏢 EntreprisePro</div>
+        <div class="user-info">
+            <div class="user-avatar">👤</div>
+            <span>Jean Dupont - Administrateur</span>
+            <button class="btn btn-secondary" onclick="showUserMenu()">⚙️</button>
+        </div>
+    </header>
+
+    <!-- Navigation avec breadcrumb -->
+    <nav>
+        <div class="breadcrumb">
+            <a href="#dashboard">Accueil</a> > 
+            <a href="#management">Gestion</a> > 
+            <span>Dashboard</span>
+        </div>
+        
+        <ul class="nav-menu">
+            <li><a href="#dashboard" class="active">📊 Dashboard</a></li>
+            <li><a href="#clients">👥 Clients</a></li>
+            <li><a href="#projects">📁 Projets</a></li>
+            <li><a href="#finances">💰 Finances</a></li>
+            <li><a href="#reports">📈 Rapports</a></li>
+            <li><a href="#settings">⚙️ Paramètres</a></li>
+        </ul>
+    </nav>
+
+    <!-- Contenu principal -->
+    <main class="container">
+        <h1>Dashboard Principal</h1>
+        
+        <!-- Widgets statistiques -->
+        <section class="dashboard-grid">
+            <div class="widget">
+                <h3>📊 Clients Actifs</h3>
+                <div class="stat-value">1,247</div>
+                <div class="stat-label">+12% ce mois</div>
+                <button class="btn" onclick="showClientDetails()">Voir détails</button>
+            </div>
+            
+            <div class="widget">
+                <h3>💼 Projets en Cours</h3>
+                <div class="stat-value">34</div>
+                <div class="stat-label">8 en retard</div>
+                <button class="btn" onclick="showProjectList()">Gérer projets</button>
+            </div>
+            
+            <div class="widget">
+                <h3>💰 Chiffre d'Affaires</h3>
+                <div class="stat-value">€47,832</div>
+                <div class="stat-label">Ce mois</div>
+                <button class="btn" onclick="showFinanceReport()">Rapport détaillé</button>
+            </div>
+            
+            <div class="widget">
+                <h3>⏰ Tâches Urgentes</h3>
+                <div class="stat-value">7</div>
+                <div class="stat-label">À traiter aujourd'hui</div>
+                <button class="btn btn-success" onclick="showTasks()">Voir tâches</button>
+            </div>
+        </section>
+
+        <!-- Formulaire de recherche -->
+        <section class="widget">
+            <h3>🔍 Recherche Rapide</h3>
+            <form id="search-form" onsubmit="performSearch(event)">
+                <div style="display: flex; gap: 1rem; align-items: end;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="search-query">Rechercher</label>
+                        <input type="search" id="search-query" name="query" placeholder="Nom client, projet, facture...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="search-type">Type</label>
+                        <select id="search-type" name="type">
+                            <option value="all">Tout</option>
+                            <option value="clients">Clients</option>
+                            <option value="projects">Projets</option>
+                            <option value="invoices">Factures</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn">🔍 Rechercher</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Tableau de données -->
+        <section class="table-container">
+            <div class="table-header">
+                <h3>📋 Dernières Activités</h3>
+                <div>
+                    <button class="btn btn-secondary" onclick="refreshData()">🔄 Actualiser</button>
+                    <button class="btn" onclick="showCreateModal()">➕ Nouveau</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📥 Exporter</button>
+                </div>
+            </div>
+            
+            <table id="activities-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Client/Projet</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>2024-01-15 14:30</td>
+                        <td>Facture</td>
+                        <td>Facturation projet ABC Corp</td>
+                        <td>ABC Corporation</td>
+                        <td><span class="status status-active">Payée</span></td>
+                        <td>
+                            <button class="btn" onclick="viewItem(1)">👁️</button>
+                            <button class="btn btn-secondary" onclick="editItem(1)">✏️</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-15 11:15</td>
+                        <td>Projet</td>
+                        <td>Nouveau projet XYZ</td>
+                        <td>XYZ Innovations</td>
+                        <td><span class="status status-pending">En cours</span></td>
+                        <td>
+                            <button class="btn" onclick="viewItem(2)">👁️</button>
+                            <button class="btn btn-secondary" onclick="editItem(2)">✏️</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-14 16:45</td>
+                        <td>Client</td>
+                        <td>Nouveau client enregistré</td>
+                        <td>TechStart Solutions</td>
+                        <td><span class="status status-active">Actif</span></td>
+                        <td>
+                            <button class="btn" onclick="viewItem(3)">👁️</button>
+                            <button class="btn btn-secondary" onclick="editItem(3)">✏️</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>2024-01-14 09:20</td>
+                        <td>Tâche</td>
+                        <td>Révision contrat</td>
+                        <td>Legal & Partners</td>
+                        <td><span class="status status-inactive">En retard</span></td>
+                        <td>
+                            <button class="btn" onclick="viewItem(4)">👁️</button>
+                            <button class="btn btn-secondary" onclick="editItem(4)">✏️</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <!-- Zone de chargement -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            Chargement en cours...
+        </div>
+    </main>
+
+    <!-- Modale de création -->
+    <div id="create-modal" class="modal">
+        <div class="modal-content">
+            <h3>Créer un nouvel élément</h3>
+            <form id="create-form" onsubmit="createItem(event)">
+                <div class="form-group">
+                    <label for="item-type">Type d'élément</label>
+                    <select id="item-type" name="type" onchange="updateFormFields()" required>
+                        <option value="">-- Choisir --</option>
+                        <option value="client">👥 Client</option>
+                        <option value="project">📁 Projet</option>
+                        <option value="invoice">💰 Facture</option>
+                        <option value="task">✅ Tâche</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-name">Nom/Titre</label>
+                    <input type="text" id="item-name" name="name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-description">Description</label>
+                    <textarea id="item-description" name="description" rows="3"></textarea>
+                </div>
+                
+                <div id="dynamic-fields">
+                    <!-- Champs dynamiques selon le type -->
+                </div>
+                
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                    <button type="submit" class="btn">Créer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar d'informations -->
+    <aside id="sidebar" class="sidebar">
+        <h3>Informations Détaillées</h3>
+        <div id="sidebar-content">
+            <p>Sélectionnez un élément pour voir les détails.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="closeSidebar()">Fermer</button>
+    </aside>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        <span id="notification-text"></span>
+    </div>
+
+    <script>
+        // État global de l'application
+        let appState = {
+            currentView: 'dashboard',
+            loading: false,
+            selectedItems: []
+        };
+
+        // Fonctions de navigation
+        function navigateToSection(section) {
+            console.log(`Navigation vers: ${section}`);
+            appState.currentView = section;
+            
+            // Mettre à jour l'URL
+            window.location.hash = section;
+            
+            // Mettre à jour la navigation active
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`[href="#${section}"]`)?.classList.add('active');
+            
+            showNotification(`Navigation vers ${section}`);
+        }
+
+        // Gestion des widgets
+        function showClientDetails() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                showSidebar(`
+                    <h4>📊 Détails Clients</h4>
+                    <p><strong>Total:</strong> 1,247 clients</p>
+                    <p><strong>Nouveaux ce mois:</strong> 143</p>
+                    <p><strong>Clients VIP:</strong> 89</p>
+                    <p><strong>Taux de rétention:</strong> 94%</p>
+                    <button class="btn" onclick="exportClients()">Exporter la liste</button>
+                `);
+            }, 1000);
+        }
+
+        function showProjectList() {
+            showLoading();
+            setTimeout(() => {
+                hideLoading();
+                showSidebar(`
+                    <h4>📁 Projets en Cours</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 0.5rem; border-bottom: 1px solid #eee;">
+                            🟢 Site web ABC Corp - 75% complete
+                        </li>
+                        <li style="padding: 0.5rem; border-bottom: 1px solid #eee;">
+                            🟡 App mobile XYZ - 45% complete
+                        </li>
+                        <li style="padding: 0.5rem; border-bottom: 1px solid #eee;">
+                            🔴 Audit TechStart - En retard
+                        </li>
+                    </ul>
+                    <button class="btn" onclick="createProject()">Nouveau projet</button>
+                `);
+            }, 800);
+        }
+
+        function showFinanceReport() {
+            showCreateModal();
+            document.getElementById('item-type').value = 'invoice';
+            updateFormFields();
+        }
+
+        function showTasks() {
+            showNotification('Redirection vers la page des tâches...');
+            setTimeout(() => {
+                navigateToSection('tasks');
+            }, 1500);
+        }
+
+        // Gestion des modales
+        function showCreateModal() {
+            document.getElementById('create-modal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('create-modal').classList.remove('show');
+            document.getElementById('create-form').reset();
+            document.getElementById('dynamic-fields').innerHTML = '';
+        }
+
+        function updateFormFields() {
+            const type = document.getElementById('item-type').value;
+            const dynamicFields = document.getElementById('dynamic-fields');
+            
+            let fieldsHtml = '';
+            
+            switch (type) {
+                case 'client':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label for="client-email">Email</label>
+                            <input type="email" id="client-email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-phone">Téléphone</label>
+                            <input type="tel" id="client-phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="client-company">Entreprise</label>
+                            <input type="text" id="client-company" name="company">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'project':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label for="project-client">Client</label>
+                            <select id="project-client" name="client">
+                                <option value="">-- Choisir un client --</option>
+                                <option value="abc">ABC Corporation</option>
+                                <option value="xyz">XYZ Innovations</option>
+                                <option value="tech">TechStart Solutions</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="project-budget">Budget (€)</label>
+                            <input type="number" id="project-budget" name="budget" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="project-deadline">Date limite</label>
+                            <input type="date" id="project-deadline" name="deadline">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'invoice':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label for="invoice-client">Client</label>
+                            <select id="invoice-client" name="client">
+                                <option value="">-- Choisir un client --</option>
+                                <option value="abc">ABC Corporation</option>
+                                <option value="xyz">XYZ Innovations</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="invoice-amount">Montant (€)</label>
+                            <input type="number" id="invoice-amount" name="amount" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="invoice-due">Date d'échéance</label>
+                            <input type="date" id="invoice-due" name="due_date">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'task':
+                    fieldsHtml = `
+                        <div class="form-group">
+                            <label for="task-priority">Priorité</label>
+                            <select id="task-priority" name="priority">
+                                <option value="low">🟢 Basse</option>
+                                <option value="medium" selected>🟡 Moyenne</option>
+                                <option value="high">🔴 Haute</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-assignee">Assigné à</label>
+                            <select id="task-assignee" name="assignee">
+                                <option value="">-- Choisir --</option>
+                                <option value="jean">Jean Dupont</option>
+                                <option value="marie">Marie Martin</option>
+                                <option value="paul">Paul Durand</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-due">Date limite</label>
+                            <input type="datetime-local" id="task-due" name="due_date">
+                        </div>
+                    `;
+                    break;
+            }
+            
+            dynamicFields.innerHTML = fieldsHtml;
+        }
+
+        function createItem(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const itemData = Object.fromEntries(formData.entries());
+            
+            console.log('Création d\'un nouvel élément:', itemData);
+            
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                closeModal();
+                showNotification(`${itemData.type} "${itemData.name}" créé avec succès !`);
+                refreshData();
+            }, 1500);
+        }
+
+        // Gestion de la sidebar
+        function showSidebar(content) {
+            document.getElementById('sidebar-content').innerHTML = content;
+            document.getElementById('sidebar').classList.add('show');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('show');
+        }
+
+        // Gestion du tableau
+        function viewItem(id) {
+            showSidebar(`
+                <h4>👁️ Détails de l'élément #${id}</h4>
+                <p>Informations détaillées sur l'élément sélectionné.</p>
+                <div style="margin: 1rem 0;">
+                    <button class="btn" onclick="editItem(${id})">✏️ Modifier</button>
+                    <button class="btn btn-secondary" onclick="deleteItem(${id})">🗑️ Supprimer</button>
+                </div>
+            `);
+        }
+
+        function editItem(id) {
+            showNotification(`Édition de l'élément #${id}`);
+            showCreateModal();
+        }
+
+        function deleteItem(id) {
+            if (confirm(`Confirmer la suppression de l'élément #${id} ?`)) {
+                showNotification(`Élément #${id} supprimé`);
+                closeSidebar();
+            }
+        }
+
+        // Autres fonctions
+        function performSearch(event) {
+            event.preventDefault();
+            
+            const query = document.getElementById('search-query').value;
+            const type = document.getElementById('search-type').value;
+            
+            console.log('Recherche:', { query, type });
+            
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                showNotification(`Recherche "${query}" effectuée`);
+            }, 1200);
+        }
+
+        function refreshData() {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                showNotification('Données actualisées');
+            }, 800);
+        }
+
+        function exportData() {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                showNotification('Export terminé ! Téléchargement en cours...');
+            }, 1500);
+        }
+
+        function showUserMenu() {
+            showSidebar(`
+                <h4>👤 Menu Utilisateur</h4>
+                <div style="margin: 1rem 0;">
+                    <button class="btn" onclick="editProfile()" style="width: 100%; margin-bottom: 0.5rem;">✏️ Modifier le profil</button>
+                    <button class="btn btn-secondary" onclick="changePassword()" style="width: 100%; margin-bottom: 0.5rem;">🔐 Changer le mot de passe</button>
+                    <button class="btn btn-secondary" onclick="logout()" style="width: 100%;">🚪 Déconnexion</button>
+                </div>
+            `);
+        }
+
+        function editProfile() {
+            showCreateModal();
+            document.querySelector('#create-modal h3').textContent = 'Modifier le profil';
+        }
+
+        function changePassword() {
+            closeSidebar();
+            showNotification('Redirection vers la page de changement de mot de passe...');
+        }
+
+        function logout() {
+            if (confirm('Confirmer la déconnexion ?')) {
+                showNotification('Déconnexion en cours...');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1500);
+            }
+        }
+
+        // Utilitaires
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            appState.loading = true;
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            appState.loading = false;
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const text = document.getElementById('notification-text');
+            
+            text.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Event listeners pour la navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🏢 Application Dashboard chargée');
+            console.log('👤 Utilisateur connecté: Jean Dupont (Administrateur)');
+            
+            // Gestion du hash change pour la navigation
+            window.addEventListener('hashchange', function() {
+                const section = window.location.hash.slice(1);
+                if (section) {
+                    navigateToSection(section);
+                }
+            });
+            
+            // Navigation par les liens du menu
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const section = this.getAttribute('href').slice(1);
+                    navigateToSection(section);
+                });
+            });
+            
+            // Fermer les modales en cliquant à l'extérieur
+            document.getElementById('create-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

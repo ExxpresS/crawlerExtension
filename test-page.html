@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page de test - Workflow Recorder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            background: #007cba;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background: #005a87;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .clickable {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        
+        .clickable:hover {
+            background: #e9ecef;
+        }
+        
+        .non-clickable {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        form {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .modal.show {
+            display: block;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+        
+        .toolbar {
+            background: #343a40;
+            color: white;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .toolbar button {
+            background: transparent;
+            border: 1px solid #6c757d;
+            color: white;
+            padding: 5px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav class="toolbar">
+        <button id="toolbar-home">🏠 Accueil</button>
+        <button id="toolbar-profile">👤 Profil</button>
+        <button id="toolbar-settings">⚙️ Paramètres</button>
+        <button id="toolbar-help">❓ Aide</button>
+    </nav>
+
+    <h1>🧪 Page de test - Capture des clics</h1>
+    <p>Cette page permet de tester différents types d'éléments cliquables pour valider la Phase 2.</p>
+
+    <!-- Section 1: Boutons standard -->
+    <section class="section" id="buttons-section">
+        <h2>1. Boutons standard</h2>
+        <p>Ces éléments devraient être capturés :</p>
+        
+        <button class="btn" id="standard-button">Bouton standard</button>
+        <button class="btn btn-secondary" data-action="secondary">Bouton avec data-action</button>
+        <input type="button" class="btn" value="Input button" onclick="testClick('input-button')">
+        <input type="submit" class="btn" value="Input submit">
+    </section>
+
+    <!-- Section 2: Liens -->
+    <section class="section" id="links-section">
+        <h2>2. Liens</h2>
+        
+        <a href="#test" class="btn">Lien avec href</a>
+        <a href="javascript:void(0)" class="btn" onclick="testClick('js-link')">Lien JavaScript</a>
+        <a class="btn" data-action="link-action">Lien sans href mais avec data-action</a>
+    </section>
+
+    <!-- Section 3: Éléments avec cursor pointer -->
+    <section class="section" id="pointer-section">
+        <h2>3. Éléments avec cursor: pointer</h2>
+        
+        <div class="clickable" onclick="testClick('div-clickable')">
+            <strong>Div cliquable</strong> - cursor: pointer + onclick
+        </div>
+        
+        <span class="clickable" style="cursor: pointer;" data-action="span-click">
+            <em>Span cliquable</em> - cursor: pointer + data-action
+        </span>
+    </section>
+
+    <!-- Section 4: Éléments avec role -->
+    <section class="section" id="role-section">
+        <h2>4. Éléments avec attribut role</h2>
+        
+        <div role="button" class="clickable">Div avec role="button"</div>
+        <span role="link" class="clickable">Span avec role="link"</span>
+    </section>
+
+    <!-- Section 5: Formulaire complet (Phase 3) -->
+    <form class="section" id="test-form" onsubmit="handleFormSubmit(event)">
+        <h2>5. Formulaire complet - Tests Phase 3</h2>
+        
+        <div class="form-group">
+            <label for="test-name">Nom complet :</label>
+            <input type="text" id="test-name" name="name" placeholder="Jean Dupont" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="test-email">Email :</label>
+            <input type="email" id="test-email" name="email" placeholder="jean@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-phone">Téléphone :</label>
+            <input type="tel" id="test-phone" name="phone" placeholder="+33 1 23 45 67 89">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-password">Mot de passe :</label>
+            <input type="password" id="test-password" name="password" placeholder="••••••••">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-number">Âge :</label>
+            <input type="number" id="test-number" name="age" min="1" max="120" placeholder="25">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-select">Pays :</label>
+            <select id="test-select" name="country">
+                <option value="">-- Choisir un pays --</option>
+                <option value="fr">🇫🇷 France</option>
+                <option value="be">🇧🇪 Belgique</option>
+                <option value="ch">🇨🇭 Suisse</option>
+                <option value="ca">🇨🇦 Canada</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="test-multiselect">Langues parlées :</label>
+            <select id="test-multiselect" name="languages" multiple>
+                <option value="fr">Français</option>
+                <option value="en">Anglais</option>
+                <option value="es">Espagnol</option>
+                <option value="de">Allemand</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="test-textarea">Commentaires :</label>
+            <textarea id="test-textarea" name="comments" placeholder="Vos commentaires ici..." rows="3"></textarea>
+        </div>
+        
+        <fieldset class="form-group">
+            <legend>Préférences :</legend>
+            <label>
+                <input type="checkbox" name="preferences" value="newsletter"> 
+                📧 S'abonner à la newsletter
+            </label>
+            <label>
+                <input type="checkbox" name="preferences" value="sms"> 
+                📱 Recevoir des SMS
+            </label>
+            <label>
+                <input type="checkbox" name="preferences" value="phone"> 
+                📞 Accepter les appels
+            </label>
+        </fieldset>
+        
+        <fieldset class="form-group">
+            <legend>Type de compte :</legend>
+            <label>
+                <input type="radio" name="account_type" value="personal"> 
+                👤 Personnel
+            </label>
+            <label>
+                <input type="radio" name="account_type" value="business"> 
+                🏢 Professionnel
+            </label>
+            <label>
+                <input type="radio" name="account_type" value="student"> 
+                🎓 Étudiant
+            </label>
+        </fieldset>
+        
+        <div class="form-group">
+            <label for="test-date">Date de naissance :</label>
+            <input type="date" id="test-date" name="birth_date">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-time">Heure préférée de contact :</label>
+            <input type="time" id="test-time" name="contact_time">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-url">Site web :</label>
+            <input type="url" id="test-url" name="website" placeholder="https://example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="test-range">Satisfaction (1-10) :</label>
+            <input type="range" id="test-range" name="satisfaction" min="1" max="10" value="5">
+            <span id="range-value">5</span>
+        </div>
+        
+        <button type="submit" class="btn">📤 Soumettre le formulaire</button>
+        <button type="reset" class="btn btn-secondary">🔄 Réinitialiser</button>
+    </form>
+
+    <!-- Section 6: Éléments NON cliquables -->
+    <section class="section" id="non-clickable-section">
+        <h2>6. Éléments NON cliquables (ne doivent PAS être capturés)</h2>
+        
+        <div class="non-clickable">
+            <p>Ce paragraphe ne doit pas être capturé car il n'est pas interactif.</p>
+            <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjUwIiBoZWlnaHQ9IjUwIiBmaWxsPSIjRkY2Rjg0Ii8+Cjx0ZXh0IHg9IjI1IiB5PSIzMCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMDAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5JbWFnZTwvdGV4dD4KPHN2Zz4K" alt="Image test">
+            <span>Texte normal qui ne doit pas être capturé.</span>
+        </div>
+    </section>
+
+    <!-- Section 7: Tests de navigation (Phase 3) -->
+    <section class="section" id="navigation-section">
+        <h2>7. Tests de navigation - Phase 3</h2>
+        
+        <button class="btn" onclick="navigateToHash('#section1')">🔗 Navigation vers #section1</button>
+        <button class="btn" onclick="navigateToHash('#section2')">🔗 Navigation vers #section2</button>
+        <button class="btn" onclick="navigateToHash('')">🏠 Retour à la racine</button>
+        
+        <button class="btn" onclick="window.history.back()">⬅️ Histoire précédente</button>
+        <button class="btn" onclick="window.history.forward()">➡️ Histoire suivante</button>
+        
+        <button class="btn" onclick="simulatePageNavigation()">🌍 Simuler navigation externe</button>
+        
+        <div style="margin-top: 20px;">
+            <a href="#anchor1" class="btn">Ancre 1</a>
+            <a href="#anchor2" class="btn">Ancre 2</a>
+            <a href="javascript:void(0)" class="btn" onclick="pushState()">Push State</a>
+        </div>
+        
+        <div id="anchor1" style="margin-top: 30px; padding: 20px; background: #e3f2fd;">
+            <h3>📍 Ancre 1</h3>
+            <p>Contenu de la première ancre pour tester les navigations internes.</p>
+        </div>
+        
+        <div id="anchor2" style="margin-top: 20px; padding: 20px; background: #f3e5f5;">
+            <h3>📍 Ancre 2</h3>
+            <p>Contenu de la deuxième ancre pour tester les navigations internes.</p>
+        </div>
+    </section>
+
+    <!-- Section 8: Tests spéciaux -->
+    <section class="section" id="special-section">
+        <h2>8. Tests spéciaux</h2>
+        
+        <button class="btn" onclick="showModal()">📱 Ouvrir une modale</button>
+        <button class="btn" onclick="addDynamicButton()">➕ Ajouter un bouton dynamique</button>
+        <button class="btn" onclick="triggerMultipleEvents()">🎭 Déclencher plusieurs événements</button>
+        <button class="btn" onclick="testFormValidation()">✅ Test validation formulaire</button>
+        
+        <div id="dynamic-content"></div>
+        <div id="test-anchor" style="margin-top: 50px;">
+            <h3>🎯 Zone de test dynamique</h3>
+        </div>
+    </section>
+
+    <!-- Modale -->
+    <div class="overlay" id="overlay" onclick="hideModal()"></div>
+    <div class="modal" id="modal">
+        <h3>Modale de test</h3>
+        <p>Cette modale permet de tester la capture dans un contexte modal.</p>
+        <button class="btn" onclick="testClick('modal-action')">Action dans la modale</button>
+        <button class="btn btn-secondary" onclick="hideModal()">Fermer</button>
+    </div>
+
+    <script>
+        // Fonctions de test Phase 2
+        function testClick(action) {
+            console.log('Test click:', action);
+            showNotification(`Action: ${action}`);
+        }
+
+        function showModal() {
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function hideModal() {
+            document.getElementById('overlay').classList.remove('show');
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function addDynamicButton() {
+            const container = document.getElementById('dynamic-content');
+            const button = document.createElement('button');
+            button.className = 'btn';
+            button.textContent = `Bouton dynamique ${Date.now()}`;
+            button.onclick = () => testClick('dynamic-button');
+            container.appendChild(button);
+        }
+
+        // Nouvelles fonctions Phase 3
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            console.log('📤 Formulaire soumis !');
+            showNotification('Formulaire soumis avec succès !');
+            
+            // Log des données du formulaire pour debug
+            const formData = new FormData(event.target);
+            console.log('Données du formulaire:');
+            for (let [name, value] of formData.entries()) {
+                console.log(`- ${name}: ${value}`);
+            }
+        }
+
+        function navigateToHash(hash) {
+            window.location.hash = hash;
+            showNotification(`Navigation vers ${hash || 'racine'}`);
+        }
+
+        function simulatePageNavigation() {
+            // Simuler une navigation vers une autre page
+            if (confirm('Simuler la navigation vers une autre page ? (Cela va changer l\'URL)')) {
+                window.location.href = window.location.href.split('#')[0] + '?test=navigation&t=' + Date.now();
+            }
+        }
+
+        function pushState() {
+            const newUrl = window.location.pathname + '?state=' + Date.now();
+            history.pushState({ test: true }, 'Test State', newUrl);
+            showNotification('Push State effectué !');
+        }
+
+        function triggerMultipleEvents() {
+            showNotification('Déclenchement de plusieurs événements...');
+            
+            // Remplir plusieurs champs automatiquement
+            document.getElementById('test-name').value = 'Test Automatique';
+            document.getElementById('test-email').value = 'test@example.com';
+            document.getElementById('test-select').value = 'fr';
+            
+            // Déclencher les événements
+            document.getElementById('test-name').dispatchEvent(new Event('input', { bubbles: true }));
+            document.getElementById('test-email').dispatchEvent(new Event('input', { bubbles: true }));
+            document.getElementById('test-select').dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        function testFormValidation() {
+            const form = document.getElementById('test-form');
+            if (form.checkValidity()) {
+                showNotification('✅ Formulaire valide !');
+            } else {
+                showNotification('❌ Formulaire invalide !');
+                form.reportValidity();
+            }
+        }
+
+        function showNotification(message) {
+            // Créer une notification temporaire
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: bold;
+                max-width: 300px;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 3000);
+        }
+
+        // Event listeners pour les éléments sans onclick
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Page de test Phase 3 chargée !');
+            console.log('🎬 Activez l\'extension et testez les différents éléments !');
+            
+            // Boutons Phase 2
+            document.getElementById('standard-button').addEventListener('click', () => testClick('standard'));
+            
+            document.querySelectorAll('[data-action]').forEach(el => {
+                el.addEventListener('click', () => testClick(el.dataset.action));
+            });
+            
+            document.querySelectorAll('[role="button"], [role="link"]').forEach(el => {
+                el.addEventListener('click', () => testClick('role-' + el.getAttribute('role')));
+            });
+            
+            // Range input avec mise à jour en temps réel
+            const rangeInput = document.getElementById('test-range');
+            const rangeValue = document.getElementById('range-value');
+            
+            if (rangeInput && rangeValue) {
+                rangeInput.addEventListener('input', function() {
+                    rangeValue.textContent = this.value;
+                });
+            }
+            
+            // Debug pour les changements de hash
+            window.addEventListener('hashchange', function(e) {
+                console.log('🔗 Hash change détecté:', e.oldURL, '→', e.newURL);
+            });
+            
+            window.addEventListener('popstate', function(e) {
+                console.log('📖 Pop state détecté:', e.state);
+            });
+        });
+    </script>
+</body>
+</html>

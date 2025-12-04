@@ -1,0 +1,738 @@
+/* Reset et styles de base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #333;
+    background-color: #f8f9fa;
+}
+
+.container {
+    width: 350px;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Main content */
+main {
+    padding: 20px;
+}
+
+/* Modes */
+.mode {
+    display: block;
+}
+
+.mode.hidden {
+    display: none;
+}
+
+/* Status */
+.status {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.status.recording {
+    background-color: #fff5f5;
+    border: 2px solid #fed7d7;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.status p {
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.timer {
+    font-size: 24px;
+    font-weight: bold;
+    color: #e53e3e;
+    font-family: 'Courier New', monospace;
+}
+
+/* Boutons */
+.btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 10px;
+}
+
+.btn-primary {
+    background-color: #4299e1;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #3182ce;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background-color: #cbd5e0;
+}
+
+/* Compteurs */
+.counters {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f7fafc;
+    border-radius: 8px;
+}
+
+.counter {
+    text-align: center;
+}
+
+.counter .label {
+    display: block;
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 5px;
+}
+
+.counter span:last-child {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2d3748;
+}
+
+/* Controles d'enregistrement */
+.recording-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Workflows récents */
+.recent-workflows {
+    margin: 20px 0;
+}
+
+.recent-workflows h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #4a5568;
+}
+
+.empty-state {
+    color: #a0aec0;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Statistiques */
+.stats {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+    font-size: 12px;
+    color: #718096;
+}
+
+/* Formulaire de review */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #4a5568;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #4299e1;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Summary */
+.summary {
+    background-color: #f0fff4;
+    border: 1px solid #9ae6b4;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.summary-stats {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-number {
+    font-size: 24px;
+    font-weight: bold;
+    color: #22543d;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #38a169;
+    margin-top: 4px;
+}
+
+/* Form helpers */
+.help-text {
+    font-size: 11px;
+    color: #a0aec0;
+    margin-top: 4px;
+    font-style: italic;
+}
+
+.suggested-tags {
+    margin-top: 8px;
+}
+
+.tag-suggestion {
+    display: inline-block;
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.tag-suggestion:hover {
+    background: #cbd5e0;
+}
+
+/* Review preview */
+.review-preview {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.review-preview h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.workflow-steps {
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.workflow-step {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 12px;
+}
+
+.workflow-step:last-child {
+    border-bottom: none;
+}
+
+.step-icon {
+    width: 20px;
+    flex-shrink: 0;
+    margin-right: 8px;
+    text-align: center;
+}
+
+.step-description {
+    flex: 1;
+    color: #4a5568;
+}
+
+/* List mode */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.list-header h2 {
+    font-size: 16px;
+    margin: 0;
+    color: #2d3748;
+}
+
+.search-section {
+    margin-bottom: 15px;
+}
+
+.search-section input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.workflows-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.workflow-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.workflow-item:hover {
+    border-color: #4299e1;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.workflow-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.workflow-meta {
+    display: flex;
+    justify-content: between;
+    align-items: center;
+    font-size: 11px;
+    color: #718096;
+    margin-bottom: 6px;
+}
+
+.workflow-date {
+    flex: 1;
+}
+
+.workflow-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.workflow-tags {
+    margin-top: 6px;
+}
+
+.workflow-tag {
+    display: inline-block;
+    background: #edf2f7;
+    color: #4a5568;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    margin-right: 4px;
+}
+
+.workflow-actions {
+    margin-top: 8px;
+    display: none;
+    gap: 5px;
+}
+
+.workflow-item:hover .workflow-actions {
+    display: flex;
+}
+
+.workflow-action {
+    padding: 2px 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.workflow-action:hover {
+    background: #f7fafc;
+}
+
+.list-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    padding-top: 15px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #a0aec0;
+    font-style: italic;
+}
+
+.empty-state-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* Review controls */
+.review-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* Animation pour les transitions */
+.mode {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.mode.hidden {
+    opacity: 0;
+}
+
+/* Recent workflows small items */
+.workflow-item-small {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.workflow-item-small:hover {
+    border-color: #4299e1;
+    background: #f7fafc;
+}
+
+.workflow-title-small {
+    font-weight: 600;
+    font-size: 13px;
+    color: #2d3748;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workflow-meta-small {
+    font-size: 11px;
+    color: #718096;
+}
+
+.workflow-description {
+    font-size: 12px;
+    color: #4a5568;
+    margin: 4px 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Modales */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content.modal-large {
+    max-width: 500px;
+    max-height: 90vh;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #2d3748;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #a0aec0;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #f7fafc;
+    color: #4a5568;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+/* Formats d'export */
+.export-formats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.export-format-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.export-format-btn:hover {
+    border-color: #4299e1;
+    background: #f7fafc;
+    transform: translateY(-1px);
+}
+
+.format-icon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.format-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.format-desc {
+    font-size: 12px;
+    color: #718096;
+}
+
+/* Détails du workflow */
+#workflow-details {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.detail-section {
+    margin-bottom: 20px;
+}
+
+.detail-section h4 {
+    font-size: 14px;
+    color: #4a5568;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.detail-info {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 8px;
+    font-size: 13px;
+    margin-bottom: 15px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #718096;
+}
+
+.detail-value {
+    color: #2d3748;
+}
+
+.action-item {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.action-number {
+    background: #4299e1;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.action-type {
+    background: #edf2f7;
+    color: #4a5568;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+.action-details {
+    color: #4a5568;
+    margin-top: 4px;
+}
+
+/* Scrollbars personnalisées */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+    .container {
+        width: 300px;
+    }
+
+    .counters {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .workflow-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .workflow-stats {
+        margin-top: 4px;
+    }
+
+    .modal-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    .detail-info {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+}

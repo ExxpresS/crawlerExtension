@@ -1,0 +1,56 @@
+{
+  "manifest_version": 3,
+  "name": "Workflow Recorder",
+  "version": "1.0.0",
+  "description": "Capture et enregistre les workflows utilisateur sur les applications SaaS métier",
+  
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "Workflow Recorder",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "libs/utils.js",
+        "libs/turndown.min.js",
+        "content-scripts/page-analyzer.js",
+        "content-scripts/recorder.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "icons": {
+    "16": "icons/icon16.png", 
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["libs/*.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
