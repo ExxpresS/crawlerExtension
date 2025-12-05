@@ -1,5 +1,7 @@
 # 🎬 Workflow Recorder
 
+https://github.com/Bessouat40/RAGLight?tab=readme-ov-file#%E2%9A%A0%EF%B8%8F-requirements
+
 Extension Chrome pour capturer et enregistrer automatiquement les workflows utilisateur sur les applications SaaS métier.
 
 ## 🚀 Fonctionnalités
