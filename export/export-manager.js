@@ -4,10 +4,11 @@ class WorkflowExportManager {
         this.dbManager = dbManager;
         this.formatters = {
             json: new JsonFormatter(),
-            csv: new CsvFormatter(), 
+            csv: new CsvFormatter(),
             pdf: new PdfFormatter(),
             rag: new RagFormatter(),
-            selenium: new SeleniumFormatter()
+            selenium: new SeleniumFormatter(),
+            documentation: new DocumentationFormatter()
         };
     }
 
