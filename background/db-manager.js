@@ -2,7 +2,7 @@
 class WorkflowDBManager {
     constructor() {
         this.dbName = 'WorkflowRecorderDB';
-        this.dbVersion = 1;
+        this.dbVersion = 2; // Incrémenté pour ajouter l'index etatApresId
         this.db = null;
     }
 
@@ -85,7 +85,10 @@ class WorkflowDBManager {
             
             // Index sur etat_avant_id pour navigation
             actionStore.createIndex('etatAvantId', 'etatAvantId', { unique: false });
-            
+
+            // Index sur etat_apres_id pour navigation inverse
+            actionStore.createIndex('etatApresId', 'etatApresId', { unique: false });
+
             // Index sur sequence pour ordre
             actionStore.createIndex('sequenceNumber', 'sequenceNumber', { unique: false });
             

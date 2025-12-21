@@ -3,21 +3,21 @@ class EventRecorder {
     constructor() {
         this.isRecording = false;
         this.lastClickTime = 0;
-        
+
         // Handlers pour tous les événements
         this.clickHandler = null;
         this.inputHandler = null;
         this.changeHandler = null;
         this.submitHandler = null;
         this.beforeUnloadHandler = null;
-        
+
         // Debouncing pour les saisies
         this.inputDebounceTimers = new Map();
         this.lastInputValues = new Map();
-        
+
         // Suivi de navigation
         this.currentUrl = window.location.href;
-        
+
         this.initializeRecorder();
     }
 
@@ -62,11 +62,11 @@ class EventRecorder {
             case 'RECORDING_STARTED':
                 this.startRecording();
                 break;
-                
+
             case 'RECORDING_STOPPED':
                 this.stopRecording();
                 break;
-                
+
             case 'RECORDING_CANCELLED':
                 this.stopRecording();
                 break;
@@ -75,54 +75,56 @@ class EventRecorder {
 
     startRecording() {
         if (this.isRecording) return;
-        
+
         console.log('🎥 Démarrage de la capture d\'événements');
         this.isRecording = true;
-        
+
         // Attacher les listeners d'événements
         this.attachEventListeners();
-        
+
         // Capturer l'état initial de la page
+        console.log('capture navigation state init');
+
         this.captureCurrentState();
     }
 
     stopRecording() {
         if (!this.isRecording) return;
-        
+
         console.log('⏹ Arrêt de la capture d\'événements');
         this.isRecording = false;
-        
+
         // Détacher les listeners d'événements
         this.detachEventListeners();
     }
 
     attachEventListeners() {
         // Phase 3 : Capture complète des événements
-        
+
         // 1. Clics (Phase 2)
         this.clickHandler = this.handleClick.bind(this);
         document.addEventListener('click', this.clickHandler, true);
-        
+
         // 2. Saisies de texte (input, textarea)
         this.inputHandler = this.handleInput.bind(this);
         document.addEventListener('input', this.inputHandler, true);
-        
+
         // 3. Changements de sélection (select, radio, checkbox)
         this.changeHandler = this.handleChange.bind(this);
         document.addEventListener('change', this.changeHandler, true);
-        
+
         // 4. Soumission de formulaires
         this.submitHandler = this.handleSubmit.bind(this);
         document.addEventListener('submit', this.submitHandler, true);
-        
+
         // 5. Navigation (beforeunload pour détecter les changements d'URL)
         this.beforeUnloadHandler = this.handleBeforeUnload.bind(this);
         window.addEventListener('beforeunload', this.beforeUnloadHandler);
-        
+
         // 6. Hashchange et popstate pour la navigation interne
         window.addEventListener('hashchange', this.handleNavigation.bind(this));
         window.addEventListener('popstate', this.handleNavigation.bind(this));
-        
+
         console.log('📋 Event listeners attachés (Phase 3 - capture complète)');
     }
 
@@ -132,35 +134,35 @@ class EventRecorder {
             document.removeEventListener('click', this.clickHandler, true);
             this.clickHandler = null;
         }
-        
+
         if (this.inputHandler) {
             document.removeEventListener('input', this.inputHandler, true);
             this.inputHandler = null;
         }
-        
+
         if (this.changeHandler) {
             document.removeEventListener('change', this.changeHandler, true);
             this.changeHandler = null;
         }
-        
+
         if (this.submitHandler) {
             document.removeEventListener('submit', this.submitHandler, true);
             this.submitHandler = null;
         }
-        
+
         if (this.beforeUnloadHandler) {
             window.removeEventListener('beforeunload', this.beforeUnloadHandler);
             this.beforeUnloadHandler = null;
         }
-        
+
         window.removeEventListener('hashchange', this.handleNavigation.bind(this));
         window.removeEventListener('popstate', this.handleNavigation.bind(this));
-        
+
         // Nettoyer les timers de debouncing
         this.inputDebounceTimers.forEach(timer => clearTimeout(timer));
         this.inputDebounceTimers.clear();
         this.lastInputValues.clear();
-        
+
         console.log('🔌 Event listeners détachés');
     }
 
@@ -195,6 +197,7 @@ class EventRecorder {
             // Mais seulement si on est toujours sur la même page (pas de navigation)
             setTimeout(() => {
                 if (window.location.href === urlAtClick) {
+                    console.log('capture navigation state 1');
                     this.captureCurrentState();
                 } else {
                     console.log('⏭️ État non capturé après clic : navigation détectée');
@@ -217,7 +220,7 @@ class EventRecorder {
         }
 
         // 3. Attributs indiquant une interaction
-        if (element.hasAttribute('onclick') || 
+        if (element.hasAttribute('onclick') ||
             element.hasAttribute('data-action') ||
             element.getAttribute('role') === 'button' ||
             element.getAttribute('role') === 'link') {
@@ -237,7 +240,7 @@ class EventRecorder {
 
         // 6. Event listeners de frameworks JS
         if (element.hasAttribute('ng-click') ||     // Angular
-            element.hasAttribute('@click') ||        // Vue.js  
+            element.hasAttribute('@click') ||        // Vue.js
             element.hasAttribute('v-on:click')) {    // Vue.js
             return true;
         }
@@ -248,30 +251,30 @@ class EventRecorder {
     analyzeClickedElement(element, event) {
         return {
             type: 'click',
-            
+
             // Informations de base
             target: {
                 tagName: element.tagName.toLowerCase(),
                 textContent: this.extractText(element),
                 innerHTML: element.innerHTML.slice(0, 200), // Limité pour performance
-                
+
                 // Attributs utiles
                 attributes: this.extractRelevantAttributes(element),
-                
+
                 // Sélecteurs multiples
                 selectors: this.generateSelectors(element),
-                
+
                 // Position et dimensions
                 position: this.getElementPosition(element, event),
-                
+
                 // Contexte parent
                 context: this.extractContext(element),
-                
+
                 // Métadonnées
                 isVisible: this.isElementVisible(element),
                 isEnabled: !element.disabled && !element.hasAttribute('disabled')
             },
-            
+
             // Détails du clic
             clickDetails: {
                 clientX: event.clientX,
@@ -294,31 +297,31 @@ class EventRecorder {
     extractRelevantAttributes(element) {
         const relevantAttrs = ['id', 'class', 'name', 'type', 'value', 'href', 'role', 'title', 'placeholder'];
         const attributes = {};
-        
+
         for (let attr of relevantAttrs) {
             if (element.hasAttribute(attr)) {
                 attributes[attr] = element.getAttribute(attr);
             }
         }
-        
+
         // Attributs data-*
         for (let attr of element.attributes) {
             if (attr.name.startsWith('data-')) {
                 attributes[attr.name] = attr.value;
             }
         }
-        
+
         return attributes;
     }
 
     generateSelectors(element) {
         const selectors = {};
-        
+
         // 1. ID (priorité haute)
         if (element.id) {
             selectors.id = `#${element.id}`;
         }
-        
+
         // 2. Combinaison de classes
         if (element.className && typeof element.className === 'string') {
             const classes = element.className.trim().split(/\s+/).slice(0, 3); // Max 3 classes
@@ -326,7 +329,7 @@ class EventRecorder {
                 selectors.className = `.${classes.join('.')}`;
             }
         }
-        
+
         // 3. Attributs data-*
         const dataAttrs = {};
         for (let attr of element.attributes) {
@@ -337,19 +340,19 @@ class EventRecorder {
         if (Object.keys(dataAttrs).length > 0) {
             selectors.dataAttributes = dataAttrs;
         }
-        
+
         // 4. XPath simple
         selectors.xpath = this.generateXPath(element);
-        
+
         // 5. Sélecteur CSS par position
         selectors.cssPath = this.generateCSSPath(element);
-        
+
         // 6. Sélecteur par texte (fallback)
         const text = element.textContent?.trim();
         if (text && text.length > 0 && text.length < 50) {
             selectors.textContent = text;
         }
-        
+
         return selectors;
     }
 
@@ -357,22 +360,22 @@ class EventRecorder {
         // Génération XPath simple basée sur la position
         const parts = [];
         let current = element;
-        
+
         while (current && current.nodeType === 1 && current !== document.body) {
             let index = 1;
             let sibling = current.previousSibling;
-            
+
             while (sibling) {
                 if (sibling.nodeType === 1 && sibling.tagName === current.tagName) {
                     index++;
                 }
                 sibling = sibling.previousSibling;
             }
-            
+
             parts.unshift(`${current.tagName.toLowerCase()}[${index}]`);
             current = current.parentElement;
         }
-        
+
         return parts.length > 0 ? `//${parts.join('/')}` : '';
     }
 
@@ -380,23 +383,23 @@ class EventRecorder {
         // Génération CSS path avec nth-child
         const parts = [];
         let current = element;
-        
+
         while (current && current !== document.body && parts.length < 5) {
             let selector = current.tagName.toLowerCase();
-            
+
             if (current.id) {
                 selector += `#${current.id}`;
                 parts.unshift(selector);
                 break;
             }
-            
+
             if (current.className && typeof current.className === 'string') {
                 const classes = current.className.trim().split(/\s+/);
                 if (classes.length > 0) {
                     selector += `.${classes[0]}`;
                 }
             }
-            
+
             // Ajouter nth-child si nécessaire
             let index = 1;
             let sibling = current.previousSibling;
@@ -404,15 +407,15 @@ class EventRecorder {
                 if (sibling.nodeType === 1) index++;
                 sibling = sibling.previousSibling;
             }
-            
+
             if (index > 1) {
                 selector += `:nth-child(${index})`;
             }
-            
+
             parts.unshift(selector);
             current = current.parentElement;
         }
-        
+
         return parts.join(' > ');
     }
 
@@ -422,11 +425,11 @@ class EventRecorder {
             // Position du clic relative à l'élément
             relativeX: event.clientX - rect.left,
             relativeY: event.clientY - rect.top,
-            
+
             // Position absolue du clic
             clientX: event.clientX,
             clientY: event.clientY,
-            
+
             // Dimensions de l'élément
             boundingRect: {
                 top: rect.top,
@@ -439,13 +442,13 @@ class EventRecorder {
 
     extractContext(element) {
         const context = {};
-        
+
         // Contexte de formulaire
         context.form = this.extractFormContext(element);
-        
+
         // Contexte de section
         context.section = this.extractSectionContext(element);
-        
+
         return context;
     }
 
@@ -469,7 +472,7 @@ class EventRecorder {
 
     extractSectionContext(element) {
         const context = {};
-        
+
         // Section sémantique la plus proche
         let parent = element.parentElement;
         while (parent && parent !== document.body) {
@@ -483,14 +486,14 @@ class EventRecorder {
             }
             parent = parent.parentElement;
         }
-        
+
         // Conteneur avec ID ou classe significative
         parent = element.parentElement;
         while (parent && parent !== document.body) {
             if (parent.id || parent.className) {
                 const patterns = ['modal', 'dialog', 'sidebar', 'toolbar', 'menu', 'content', 'container'];
                 const identifier = (parent.id + ' ' + parent.className).toLowerCase();
-                
+
                 for (let pattern of patterns) {
                     if (identifier.includes(pattern)) {
                         context.container = {
@@ -505,17 +508,17 @@ class EventRecorder {
             }
             parent = parent.parentElement;
         }
-        
+
         return context;
     }
 
     isElementVisible(element) {
         const rect = element.getBoundingClientRect();
         const style = window.getComputedStyle(element);
-        
-        return rect.width > 0 && 
-               rect.height > 0 && 
-               style.visibility !== 'hidden' && 
+
+        return rect.width > 0 &&
+               rect.height > 0 &&
+               style.visibility !== 'hidden' &&
                style.display !== 'none';
     }
 
@@ -523,7 +526,7 @@ class EventRecorder {
         if (!this.isRecording) return;
 
         const element = event.target;
-        
+
         // Filtrer uniquement les éléments de saisie de texte
         if (!this.isTextInputElement(element)) {
             return;
@@ -533,18 +536,18 @@ class EventRecorder {
 
         // Debouncing : attendre 1 seconde après la dernière saisie
         const elementKey = this.getElementKey(element);
-        
+
         // Annuler le timer précédent
         if (this.inputDebounceTimers.has(elementKey)) {
             clearTimeout(this.inputDebounceTimers.get(elementKey));
         }
-        
+
         // Créer un nouveau timer
         const timer = setTimeout(() => {
             this.captureInputAction(element);
             this.inputDebounceTimers.delete(elementKey);
         }, 1000);
-        
+
         this.inputDebounceTimers.set(elementKey, timer);
     }
 
@@ -552,7 +555,7 @@ class EventRecorder {
         if (!this.isRecording) return;
 
         const element = event.target;
-        
+
         // Capturer les changements de sélection
         if (this.isSelectionElement(element)) {
             console.log('🔄 Changement de sélection:', element);
@@ -564,7 +567,7 @@ class EventRecorder {
         if (!this.isRecording) return;
 
         const form = event.target;
-        
+
         console.log('📤 Soumission de formulaire:', form);
         this.captureSubmitAction(form, event);
     }
@@ -593,12 +596,12 @@ class EventRecorder {
         if (element.tagName === 'TEXTAREA') {
             return true;
         }
-        
+
         if (element.tagName === 'INPUT') {
             const textTypes = ['text', 'email', 'password', 'tel', 'url', 'search', 'number'];
             return textTypes.includes(element.type?.toLowerCase());
         }
-        
+
         return false;
     }
 
@@ -606,19 +609,19 @@ class EventRecorder {
         if (element.tagName === 'SELECT') {
             return true;
         }
-        
+
         if (element.tagName === 'INPUT') {
             const selectionTypes = ['checkbox', 'radio'];
             return selectionTypes.includes(element.type?.toLowerCase());
         }
-        
+
         return false;
     }
 
     getElementKey(element) {
         // Générer une clé unique pour l'élément
-        return element.id || 
-               element.name || 
+        return element.id ||
+               element.name ||
                element.getAttribute('data-key') ||
                this.generateCSSPath(element);
     }
@@ -627,12 +630,12 @@ class EventRecorder {
         const currentValue = element.value;
         const elementKey = this.getElementKey(element);
         const lastValue = this.lastInputValues.get(elementKey);
-        
+
         // Éviter de capturer si la valeur n'a pas changé
         if (currentValue === lastValue) {
             return;
         }
-        
+
         this.lastInputValues.set(elementKey, currentValue);
 
         const actionData = {
@@ -644,24 +647,24 @@ class EventRecorder {
                 id: element.id || '',
                 placeholder: element.placeholder || '',
                 label: this.getInputLabel(element),
-                
+
                 // Valeur anonymisée
                 valueType: this.detectValueType(currentValue),
                 valueLength: currentValue.length,
                 hasValue: currentValue.length > 0,
-                
+
                 // Sélecteurs
                 selectors: this.generateSelectors(element),
-                
+
                 // Contexte
                 context: this.extractContext(element),
-                
+
                 // Métadonnées
                 isRequired: element.required,
                 maxLength: element.maxLength || null,
                 pattern: element.pattern || null
             },
-            
+
             // Détails de la saisie (anonymisés)
             inputDetails: {
                 previousValueLength: lastValue ? lastValue.length : 0,
@@ -672,9 +675,11 @@ class EventRecorder {
         };
 
         this.sendToServiceWorker('ACTION_CAPTURED', actionData);
-        
+
         // Phase 4 : Capturer l'état après l'action
         setTimeout(() => {
+            console.log('capture navigation state 3');
+
             this.captureCurrentState();
         }, 300);
     }
@@ -686,10 +691,10 @@ class EventRecorder {
                 tagName: element.tagName.toLowerCase(),
                 name: element.name || '',
                 id: element.id || '',
-                
+
                 // Sélecteurs
                 selectors: this.generateSelectors(element),
-                
+
                 // Contexte
                 context: this.extractContext(element)
             }
@@ -718,9 +723,11 @@ class EventRecorder {
         }
 
         this.sendToServiceWorker('ACTION_CAPTURED', actionData);
-        
+
         // Phase 4 : Capturer l'état après l'action
         setTimeout(() => {
+            console.log('capture navigation state 4');
+
             this.captureCurrentState();
         }, 300);
     }
@@ -729,7 +736,7 @@ class EventRecorder {
         // Collecter les données du formulaire (anonymisées)
         const formData = new FormData(form);
         const fields = [];
-        
+
         for (let [name, value] of formData.entries()) {
             fields.push({
                 name,
@@ -747,14 +754,14 @@ class EventRecorder {
                 name: form.name || '',
                 action: form.action || '',
                 method: form.method || 'GET',
-                
+
                 // Sélecteurs
                 selectors: this.generateSelectors(form),
-                
+
                 // Contexte
                 context: this.extractContext(form)
             },
-            
+
             submitDetails: {
                 fieldsCount: fields.length,
                 fields: fields,
@@ -764,9 +771,11 @@ class EventRecorder {
         };
 
         this.sendToServiceWorker('ACTION_CAPTURED', actionData);
-        
+
         // Phase 4 : Capturer l'état après l'action
         setTimeout(() => {
+            console.log('capture navigation state 5');
+
             this.captureCurrentState();
         }, 300);
     }
@@ -774,7 +783,7 @@ class EventRecorder {
     captureNavigationAction(fromUrl, toUrl, navigationType) {
         const actionData = {
             type: 'navigation',
-            
+
             navigationDetails: {
                 from: {
                     url: fromUrl,
@@ -792,15 +801,19 @@ class EventRecorder {
         };
 
         this.sendToServiceWorker('ACTION_CAPTURED', actionData);
-        
+
         // Phase 4 : Capturer l'état après l'action
         setTimeout(() => {
+            console.log('capture navigation state 6');
+
             this.captureCurrentState();
         }, 300);
-        
+
         // Capturer le nouvel état après navigation
         if (toUrl) {
             setTimeout(() => {
+                console.log('capture navigation state 7');
+
                 this.captureCurrentState();
             }, 500);
         }
@@ -812,7 +825,7 @@ class EventRecorder {
             const label = document.querySelector(`label[for="${element.id}"]`);
             if (label) return label.textContent.trim();
         }
-        
+
         // Chercher le label parent
         let parent = element.parentElement;
         while (parent) {
@@ -821,14 +834,14 @@ class EventRecorder {
             }
             parent = parent.parentElement;
         }
-        
+
         // Fallback : placeholder ou name
         return element.placeholder || element.name || '';
     }
 
     detectValueType(value) {
         if (!value || value.length === 0) return 'empty';
-        
+
         // Patterns de détection
         const patterns = {
             email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -840,37 +853,37 @@ class EventRecorder {
             creditCard: /^\d{13,19}$/,
             postalCode: /^\d{5}(-\d{4})?$/
         };
-        
+
         for (let [type, pattern] of Object.entries(patterns)) {
             if (pattern.test(value)) {
                 return type;
             }
         }
-        
+
         // Types basiques
         if (value.length < 3) return 'short';
         if (value.length > 100) return 'long';
         if (/^[A-Z\s]+$/.test(value)) return 'uppercase';
         if (/^\d+$/.test(value)) return 'numeric';
-        
+
         return 'text';
     }
 
     captureCurrentState() {
         if (!this.isRecording) return;
-        
+
         console.log('📊 Capture de l\'état de la page...');
-        
+
         try {
             // Phase 4 : Utiliser le page analyzer pour une analyse complète
-            const stateData = window.pageAnalyzer ? 
-                window.pageAnalyzer.analyzeCurrentPage() : 
+            const stateData = window.pageAnalyzer ?
+                window.pageAnalyzer.analyzeCurrentPage() :
                 this.fallbackStateAnalysis();
 
             this.sendToServiceWorker('STATE_CAPTURED', stateData);
         } catch (error) {
             console.error('Erreur lors de la capture d\'état:', error);
-            
+
             // Fallback en cas d'erreur
             const fallbackData = this.fallbackStateAnalysis();
             this.sendToServiceWorker('STATE_CAPTURED', fallbackData);
@@ -884,14 +897,14 @@ class EventRecorder {
             title: document.title,
             timestamp: Date.now(),
             urlPattern: this.extractUrlPattern(window.location.href),
-            
+
             // Informations basiques
             interactiveCount: document.querySelectorAll('button, input, select, textarea, a').length,
             formsCount: document.querySelectorAll('form').length,
-            
+
             // Hash simple
             contentHash: this.simplePageHash(),
-            
+
             // Marqueur de fallback
             isFallback: true
         };
@@ -901,13 +914,13 @@ class EventRecorder {
         try {
             const urlObj = new URL(url);
             let pathname = urlObj.pathname;
-            
+
             // Remplacer les nombres par {id}
             pathname = pathname.replace(/\/\d+/g, '/{id}');
-            
+
             // Remplacer les UUIDs par {uuid}
             pathname = pathname.replace(/\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '/{uuid}');
-            
+
             return urlObj.origin + pathname;
         } catch (error) {
             return url;
@@ -920,7 +933,7 @@ class EventRecorder {
             window.location.pathname,
             document.querySelectorAll('button, input, select').length.toString()
         ].join('|');
-        
+
         let hash = 0;
         for (let i = 0; i < content.length; i++) {
             const char = content.charCodeAt(i);

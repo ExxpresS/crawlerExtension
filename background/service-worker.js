@@ -13,8 +13,13 @@ class WorkflowRecorder {
             actionCount: 0,
             stateCount: 0
         };
-        
+
         this.dbManager = new WorkflowDBManager();
+
+        // Variables de tracking pour lier actions et states
+        this.lastCapturedStateId = null;  // ID du dernier state capturé
+        this.pendingAction = null;         // Action en attente de lien avec state suivant
+
         this.initializeServiceWorker();
     }
 
@@ -35,7 +40,7 @@ class WorkflowRecorder {
         chrome.runtime.onInstalled.addListener(() => {
             this.initializeState();
         });
-        
+
         // Initialize database
         this.initializeDatabase();
     }
@@ -54,7 +59,7 @@ class WorkflowRecorder {
         this.isRecording = false;
         this.currentWorkflow = null;
         this.resetRecordingState();
-        
+
         // Clear any recording badge
         await this.updateBadge(false);
     }
@@ -100,12 +105,12 @@ class WorkflowRecorder {
                     const stats = await this.getWorkflowStats();
                     sendResponse(stats);
                     break;
-                
+
                 case 'GET_WORKFLOWS':
                     const workflows = await this.getWorkflows();
                     sendResponse({ workflows });
                     break;
-                    
+
                 case 'DELETE_WORKFLOW':
                     await this.deleteWorkflow(message.workflowId);
                     sendResponse({ success: true });
@@ -142,7 +147,7 @@ class WorkflowRecorder {
         }
 
         console.log('Démarrage de l\'enregistrement...');
-        
+
         // Initialize recording state
         this.isRecording = true;
         this.recordingState = {
@@ -175,7 +180,16 @@ class WorkflowRecorder {
         console.log('Arrêt de l\'enregistrement...');
 
         this.isRecording = false;
-        
+
+        // Nettoyer les variables de tracking
+        if (this.pendingAction) {
+            // Si action pendante sans state suivant, l'ajouter quand même
+            this.recordingState.actions.push(this.pendingAction);
+            console.log('⚠️ Action pendante ajoutée sans etatApresId:', this.pendingAction.type);
+        }
+        this.pendingAction = null;
+        this.lastCapturedStateId = null;
+
         // Update badge
         await this.updateBadge(false);
 
@@ -201,8 +215,13 @@ class WorkflowRecorder {
         console.log('Annulation de l\'enregistrement...');
 
         this.isRecording = false;
+
+        // Nettoyer les variables de tracking
+        this.pendingAction = null;
+        this.lastCapturedStateId = null;
+
         this.resetRecordingState();
-        
+
         // Update badge
         await this.updateBadge(false);
 
@@ -217,7 +236,7 @@ class WorkflowRecorder {
         if (!this.dbManager.db) {
             throw new Error('Base de données non initialisée');
         }
-        
+
         if (this.recordingState.actions.length === 0) {
             throw new Error('Aucune action enregistrée dans ce workflow');
         }
@@ -230,7 +249,7 @@ class WorkflowRecorder {
                 id: this.recordingState.workflowId,
                 title: metadata.title,
                 description: metadata.description || '',
-                tags: Array.isArray(metadata.tags) ? metadata.tags : 
+                tags: Array.isArray(metadata.tags) ? metadata.tags :
                       (metadata.tags ? metadata.tags.split(',').map(t => t.trim()).filter(t => t) : []),
                 metadata: {
                     createdAt: new Date(this.recordingState.startTime).toISOString(),
@@ -255,7 +274,7 @@ class WorkflowRecorder {
             // Reset state
             this.resetRecordingState();
             this.currentWorkflow = null;
-            
+
             return workflow;
 
         } catch (error) {
@@ -266,7 +285,7 @@ class WorkflowRecorder {
 
     async discardWorkflow() {
         console.log('Rejet du workflow...');
-        
+
         // Simply reset state without saving
         this.resetRecordingState();
         this.currentWorkflow = null;
@@ -277,7 +296,7 @@ class WorkflowRecorder {
             if (!this.dbManager.db) {
                 await this.dbManager.initialize();
             }
-            
+
             const stats = await this.dbManager.getStatistiques();
             return stats;
         } catch (error) {
@@ -290,13 +309,13 @@ class WorkflowRecorder {
             };
         }
     }
-    
+
     async getWorkflows() {
         try {
             if (!this.dbManager.db) {
                 await this.dbManager.initialize();
             }
-            
+
             const workflows = await this.dbManager.getAllWorkflows('createdAt', 'desc');
             return workflows;
         } catch (error) {
@@ -304,13 +323,13 @@ class WorkflowRecorder {
             return [];
         }
     }
-    
+
     async deleteWorkflow(workflowId) {
         try {
             if (!this.dbManager.db) {
                 await this.dbManager.initialize();
             }
-            
+
             await this.dbManager.deleteWorkflow(workflowId);
             console.log('✅ Workflow supprimé:', workflowId);
         } catch (error) {
@@ -328,13 +347,18 @@ class WorkflowRecorder {
             id: this.generateUUID(),
             workflowId: this.recordingState.workflowId,
             timestamp: Date.now(),
-            sequenceNumber: this.recordingState.actionCount + 1
+            sequenceNumber: this.recordingState.actionCount + 1,
+
+            // Lier au state actuel (avant l'action)
+            etatAvantId: this.lastCapturedStateId || null
         };
 
         // Logs spécialisés selon le type d'action
         this.logAction(enrichedAction);
-        
-        this.recordingState.actions.push(enrichedAction);
+
+        // Stocker l'action en attente au lieu de l'ajouter immédiatement
+        // Elle sera ajoutée quand le state suivant sera capturé
+        this.pendingAction = enrichedAction;
         this.recordingState.actionCount++;
 
         // Notify popup to update counter
@@ -355,6 +379,15 @@ class WorkflowRecorder {
         const lastState = this.recordingState.states[this.recordingState.states.length - 1];
         if (lastState && lastState.contentHash === stateData.contentHash) {
             console.log('📋 État identique ignoré (hash:', stateData.contentHash?.slice(0, 8) + ')');
+
+            // Si state identique, ajouter quand même l'action pendante
+            // (cas où action ne change pas le contenu visible)
+            if (this.pendingAction) {
+                this.pendingAction.etatApresId = lastState.id; // Référence au state existant
+                this.recordingState.actions.push(this.pendingAction);
+                console.log('⚡ Action ajoutée (state inchangé):', this.pendingAction.type);
+                this.pendingAction = null;
+            }
             return;
         }
 
@@ -374,9 +407,24 @@ class WorkflowRecorder {
             hash: enrichedState.contentHash?.slice(0, 8) + '...',
             sequenceNumber: enrichedState.sequenceNumber
         });
-        
+
+        // Si action pendante, la lier au nouveau state
+        if (this.pendingAction) {
+            this.pendingAction.etatApresId = enrichedState.id;
+            this.recordingState.actions.push(this.pendingAction);
+            console.log('⚡ Action liée:', {
+                actionType: this.pendingAction.type,
+                etatAvant: this.pendingAction.etatAvantId?.slice(0, 8),
+                etatApres: this.pendingAction.etatApresId?.slice(0, 8)
+            });
+            this.pendingAction = null;
+        }
+
         this.recordingState.states.push(enrichedState);
         this.recordingState.stateCount++;
+
+        // Mettre à jour le dernier state capturé
+        this.lastCapturedStateId = enrichedState.id;
 
         // Notify popup to update counter
         this.notifyPopup('STATE_CAPTURED', {
@@ -395,13 +443,15 @@ class WorkflowRecorder {
             if (tabs.length === 0) return;
 
             const tab = tabs[0];
-            
+
             // Inject content script if needed and capture initial state
             await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 func: () => {
                     // This will trigger the content script to capture initial state
                     if (window.workflowRecorder) {
+                        console.log('capture navigation state 2');
+
                         window.workflowRecorder.captureCurrentState();
                     }
                 }
@@ -440,7 +490,7 @@ class WorkflowRecorder {
     async notifyContentScripts(type, data = null) {
         try {
             const tabs = await chrome.tabs.query({});
-            
+
             for (const tab of tabs) {
                 try {
                     await chrome.tabs.sendMessage(tab.id, {
@@ -463,16 +513,16 @@ class WorkflowRecorder {
             // Save workflow metadata to chrome.storage
             const key = `workflow_${workflow.id}`;
             await chrome.storage.local.set({ [key]: workflow });
-            
+
             // Update workflow list
             const result = await chrome.storage.local.get(['workflow_list']);
             const workflowList = result.workflow_list || [];
-            
+
             if (!workflowList.includes(workflow.id)) {
                 workflowList.push(workflow.id);
                 await chrome.storage.local.set({ workflow_list: workflowList });
             }
-            
+
             console.log('Workflow sauvegardé:', workflow.id);
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
@@ -501,16 +551,16 @@ class WorkflowRecorder {
         };
 
         const icon = icons[action.type] || '❓';
-        
+
         switch (action.type) {
             case 'click':
                 console.log(`${icon} Clic sur ${action.target?.tagName}: "${action.target?.textContent?.slice(0, 30)}" [#${action.sequenceNumber}]`);
                 break;
-                
+
             case 'input':
                 console.log(`${icon} Saisie dans ${action.target?.inputType}: "${action.target?.label}" (${action.target?.valueType}, ${action.target?.valueLength} caractères) [#${action.sequenceNumber}]`);
                 break;
-                
+
             case 'change':
                 if (action.target?.selectDetails) {
                     console.log(`${icon} Sélection: "${action.target.selectDetails.selectedText}" dans ${action.target.tagName} [#${action.sequenceNumber}]`);
@@ -520,17 +570,17 @@ class WorkflowRecorder {
                     console.log(`${icon} Radio sélectionné: "${action.target.radioDetails.value}" (${action.target.radioDetails.groupName}) [#${action.sequenceNumber}]`);
                 }
                 break;
-                
+
             case 'submit':
                 console.log(`${icon} Formulaire soumis: ${action.target?.id || 'sans ID'} (${action.submitDetails?.fieldsCount} champs) [#${action.sequenceNumber}]`);
                 break;
-                
+
             case 'navigation':
                 const from = action.navigationDetails?.from?.pathname || '';
                 const to = action.navigationDetails?.to?.pathname || 'externe';
                 console.log(`${icon} Navigation: ${from} → ${to} (${action.navigationDetails?.navigationType}) [#${action.sequenceNumber}]`);
                 break;
-                
+
             default:
                 console.log(`${icon} Action ${action.type}: ${JSON.stringify(action.target)} [#${action.sequenceNumber}]`);
         }

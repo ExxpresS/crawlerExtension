@@ -29,7 +29,28 @@ class PageAnalyzer {
                         return `![${alt}]`;
                     }
                 });
-                
+
+                // Simplifier les selects pour éviter d'inclure toutes les options
+                this.turndownService.addRule('simplifySelects', {
+                    filter: 'select',
+                    replacement: (content, node) => {
+                        const name = node.getAttribute('name') || 'select';
+                        const options = Array.from(node.options).slice(0, 5);
+                        const total = node.options.length;
+
+                        let result = `**Select: ${name}**\n`;
+                        options.forEach(opt => {
+                            result += `- ${opt.text}\n`;
+                        });
+
+                        if (total > 5) {
+                            result += `- _(+${total - 5} autres options)_\n`;
+                        }
+
+                        return result;
+                    }
+                });
+
                 console.log('✅ Turndown Service initialisé');
             } else {
                 console.warn('⚠️ TurndownService non disponible, fallback sur méthode basique');
@@ -214,12 +235,14 @@ class PageAnalyzer {
     }
 
     cleanMarkdown(markdown) {
-        // Nettoyer et normaliser le markdown
+        // Nettoyer et normaliser le markdown tout en préservant la structure
         return markdown
-            .replace(/\n{3,}/g, '\n\n') // Max 2 sauts de ligne
-            .replace(/\s+/g, ' ') // Normaliser les espaces
-            .trim()
-            .slice(0, 10000); // Limiter à 10KB
+            .replace(/\n{3,}/g, '\n\n') // Max 2 sauts de ligne consécutifs
+            .replace(/[ \t]+/g, ' ') // Normaliser espaces et tabs MAIS garder les \n
+            .replace(/[ \t]+\n/g, '\n') // Supprimer espaces en fin de ligne
+            .replace(/\n[ \t]+/g, '\n') // Supprimer espaces en début de ligne
+            .trim();
+            // Pas de limite de taille - capture complète du contenu
     }
 
     findInteractiveElements() {
