@@ -255,7 +255,8 @@ class EventRecorder {
             // Informations de base
             target: {
                 tagName: element.tagName.toLowerCase(),
-                textContent: this.extractText(element),
+                textContent: this.extractText(element),  // Garde pour compatibilité
+                textContext: this.extractTextWithContext(element),  // NOUVEAU: Contexte enrichi
                 innerHTML: element.innerHTML.slice(0, 200), // Limité pour performance
 
                 // Attributs utiles
@@ -294,8 +295,309 @@ class EventRecorder {
         return text.slice(0, 100); // Limiter la taille
     }
 
+    /**
+     * Extrait tous les attributs de contexte direct de l'élément
+     * Capture: text, aria-label, aria-labelledby, title, data-original-title, placeholder, alt, value
+     */
+    extractDirectContext(element) {
+        const context = {};
+
+        // Texte de contenu (nettoyé)
+        let text = (element.textContent || element.innerText || '').trim().replace(/\s+/g, ' ');
+        context.text = text.slice(0, 100);
+
+        // ARIA label
+        context.ariaLabel = element.getAttribute('aria-label') || null;
+
+        // ARIA labelledby (résoudre la référence)
+        if (element.hasAttribute('aria-labelledby')) {
+            const labelId = element.getAttribute('aria-labelledby');
+            const labelElement = document.getElementById(labelId);
+            if (labelElement) {
+                context.ariaLabelledBy = labelElement.textContent.trim();
+            } else {
+                context.ariaLabelledBy = null;
+            }
+        } else {
+            context.ariaLabelledBy = null;
+        }
+
+        // Title (tooltip HTML natif)
+        context.title = element.getAttribute('title') || null;
+
+        // Data-original-title (Bootstrap tooltips)
+        context.dataOriginalTitle = element.getAttribute('data-original-title') || null;
+
+        // Input-specific attributes
+        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+            context.placeholder = element.placeholder || null;
+            if (element.type === 'button' || element.type === 'submit' || element.type === 'reset') {
+                context.value = element.value || null;
+            } else {
+                context.value = null;
+            }
+        } else {
+            context.placeholder = null;
+            context.value = null;
+        }
+
+        // Button-specific
+        if (element.tagName === 'BUTTON') {
+            context.value = element.value || null;
+        }
+
+        // Image-specific
+        if (element.tagName === 'IMG') {
+            context.alt = element.getAttribute('alt') || null;
+        } else {
+            context.alt = null;
+        }
+
+        return context;
+    }
+
+    /**
+     * Vérifie si le contexte direct est suffisant (au moins 2 caractères significatifs)
+     */
+    hasSufficientContext(directContext) {
+        // Priorité 1: ARIA label
+        if (directContext.ariaLabel && directContext.ariaLabel.length >= 2) {
+            return true;
+        }
+
+        // Priorité 2: ARIA labelledby résolu
+        if (directContext.ariaLabelledBy && directContext.ariaLabelledBy.length >= 2) {
+            return true;
+        }
+
+        // Priorité 3: Title (tooltip HTML natif)
+        if (directContext.title && directContext.title.length >= 2) {
+            return true;
+        }
+
+        // Priorité 4: Data-original-title (Bootstrap tooltips)
+        if (directContext.dataOriginalTitle && directContext.dataOriginalTitle.length >= 2) {
+            return true;
+        }
+
+        // Priorité 5: Texte de contenu
+        if (directContext.text && directContext.text.length >= 2) {
+            return true;
+        }
+
+        // Priorité 6: Value ou placeholder
+        if (directContext.value && directContext.value.length >= 2) {
+            return true;
+        }
+        if (directContext.placeholder && directContext.placeholder.length >= 2) {
+            return true;
+        }
+
+        // Priorité 7: Alt text (images)
+        if (directContext.alt && directContext.alt.length >= 2) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Extrait uniquement les noeuds texte directs du parent (pas descendants)
+     */
+    extractDirectTextNodes(element) {
+        const textParts = [];
+
+        for (let node of element.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent.trim();
+                if (text) {
+                    textParts.push(text);
+                }
+            }
+        }
+
+        return textParts.join(' ').trim();
+    }
+
+    /**
+     * Extrait le texte d'un élément enfant (max 50 chars)
+     */
+    extractChildText(element) {
+        const childData = {
+            text: '',
+            tagName: element.tagName.toLowerCase(),
+            ariaLabel: null,
+            title: null,
+            dataOriginalTitle: null
+        };
+
+        // Priorité 1: aria-label
+        if (element.hasAttribute('aria-label')) {
+            childData.ariaLabel = element.getAttribute('aria-label').trim();
+        }
+
+        // Priorité 2: title
+        if (element.hasAttribute('title')) {
+            childData.title = element.getAttribute('title').trim();
+        }
+
+        // Priorité 3: data-original-title (Bootstrap tooltips)
+        if (element.hasAttribute('data-original-title')) {
+            childData.dataOriginalTitle = element.getAttribute('data-original-title').trim();
+        }
+
+        // Texte de contenu (limité à 50 chars pour enfants)
+        let text = (element.textContent || '').trim().replace(/\s+/g, ' ');
+        childData.text = text.slice(0, 50);
+
+        return childData;
+    }
+
+    /**
+     * Extrait le contexte du parent et de ses enfants
+     * @param {HTMLElement} parentElement - L'élément parent
+     * @param {HTMLElement} excludeElement - L'élément à exclure (élément cliqué)
+     */
+    extractParentContext(parentElement, excludeElement) {
+        const context = {
+            text: '',
+            children: [],
+            ariaLabel: null,
+            title: null,
+            dataOriginalTitle: null,
+            role: null
+        };
+
+        // Attributs du parent
+        context.ariaLabel = parentElement.getAttribute('aria-label') || null;
+        context.title = parentElement.getAttribute('title') || null;
+        context.dataOriginalTitle = parentElement.getAttribute('data-original-title') || null;
+        context.role = parentElement.getAttribute('role') || null;
+
+        // Texte direct du parent (noeuds texte seulement, pas descendants)
+        const parentOwnText = this.extractDirectTextNodes(parentElement);
+
+        // Collecter texte des enfants (max 5)
+        let childCount = 0;
+        const MAX_CHILDREN = 5;
+
+        for (let child of parentElement.children) {
+            if (child === excludeElement) continue;  // Ignorer élément cliqué
+            if (childCount >= MAX_CHILDREN) break;   // Limiter à 5 enfants
+
+            const childText = this.extractChildText(child);
+
+            if (childText.text || childText.ariaLabel || childText.title || childText.dataOriginalTitle) {
+                context.children.push(childText);
+                childCount++;
+            }
+        }
+
+        // Agréger tout le texte (max 200 chars)
+        const allTexts = [
+            parentOwnText,
+            ...context.children.map(c => c.text || c.ariaLabel || c.title || c.dataOriginalTitle)
+        ].filter(t => t);
+
+        context.text = allTexts.join(' | ').slice(0, 200);
+
+        return context;
+    }
+
+    /**
+     * Vérifie si le contexte parent est significatif
+     */
+    hasMeaningfulParentContext(parentContext) {
+        // Parent a aria-label, title ou data-original-title
+        if (parentContext.ariaLabel || parentContext.title || parentContext.dataOriginalTitle) {
+            return true;
+        }
+
+        // Parent ou enfants ont du texte significatif
+        if (parentContext.text && parentContext.text.length >= 2) {
+            return true;
+        }
+
+        // Au moins un enfant avec contexte
+        if (parentContext.children.length > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Extrait le contexte textuel enrichi en remontant l'arborescence DOM si nécessaire
+     * @param {HTMLElement} element - L'élément cliqué
+     * @param {number} maxParentLevels - Nombre max de niveaux parents (défaut: 2)
+     * @returns {Object} Contexte enrichi
+     */
+    extractTextWithContext(element, maxParentLevels = 2) {
+        const result = {
+            direct: {},
+            parent: {
+                level: 0,
+                text: '',
+                children: [],
+                ariaLabel: null,
+                title: null,
+                dataOriginalTitle: null,
+                role: null
+            },
+            hasDirectContext: false,
+            hasParentContext: false,
+            source: ''
+        };
+
+        // ÉTAPE 1: Extraire contexte direct
+        result.direct = this.extractDirectContext(element);
+
+        // ÉTAPE 2: Vérifier si contexte direct est suffisant
+        if (this.hasSufficientContext(result.direct)) {
+            result.hasDirectContext = true;
+            result.source = 'direct';
+            return result;
+        }
+
+        // ÉTAPE 3: Traverser parents si nécessaire
+        let currentElement = element.parentElement;
+        let parentLevel = 1;
+
+        while (currentElement &&
+               parentLevel <= maxParentLevels &&
+               currentElement !== document.body) {
+
+            const parentContext = this.extractParentContext(currentElement, element);
+
+            if (this.hasMeaningfulParentContext(parentContext)) {
+                result.parent = {
+                    level: parentLevel,
+                    ...parentContext
+                };
+                result.hasParentContext = true;
+                result.source = `parent-${parentLevel}`;
+                break;
+            }
+
+            currentElement = currentElement.parentElement;
+            parentLevel++;
+        }
+
+        // ÉTAPE 4: Déterminer source finale
+        if (!result.hasDirectContext && !result.hasParentContext) {
+            result.source = 'none';
+        }
+
+        return result;
+    }
+
     extractRelevantAttributes(element) {
-        const relevantAttrs = ['id', 'class', 'name', 'type', 'value', 'href', 'role', 'title', 'placeholder'];
+        const relevantAttrs = [
+            'id', 'class', 'name', 'type', 'value', 'href',
+            'role', 'title', 'placeholder',
+            'aria-label', 'aria-labelledby', 'aria-describedby',  // NOUVEAU: ARIA
+            'data-original-title'  // NOUVEAU: Bootstrap tooltips
+        ];
         const attributes = {};
 
         for (let attr of relevantAttrs) {
