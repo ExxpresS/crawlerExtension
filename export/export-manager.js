@@ -6,19 +6,17 @@ class WorkflowExportManager {
             json: new JsonFormatter(),
             csv: new CsvFormatter(),
             pdf: new PdfFormatter(),
-            rag: new RagFormatter(),
             selenium: new SeleniumFormatter(),
-            documentation: new DocumentationFormatter()
-        };
+            };
     }
 
     async exportWorkflow(workflowId, format, options = {}) {
         try {
             console.log(`📥 Export workflow ${workflowId} en format ${format}...`);
-            
+
             // Récupérer les données complètes du workflow
             const workflowData = await this.dbManager.getWorkflowComplete(workflowId);
-            
+
             if (!workflowData) {
                 throw new Error(`Workflow ${workflowId} non trouvé`);
             }
@@ -30,10 +28,10 @@ class WorkflowExportManager {
             }
 
             const exportedData = await formatter.format(workflowData, options);
-            
+
             // Déclencher le téléchargement
             await this.downloadFile(exportedData, workflowId, format);
-            
+
             console.log(`✅ Export ${format} terminé pour workflow ${workflowId}`);
             return exportedData;
 
@@ -46,10 +44,10 @@ class WorkflowExportManager {
     async exportAllWorkflows(format, options = {}) {
         try {
             console.log(`📥 Export de tous les workflows en format ${format}...`);
-            
+
             // Récupérer tous les workflows
             const workflows = await this.dbManager.getAllWorkflows();
-            
+
             if (workflows.length === 0) {
                 throw new Error('Aucun workflow à exporter');
             }
@@ -71,7 +69,7 @@ class WorkflowExportManager {
                         data: exportedData
                     });
                 }
-                
+
                 await this.downloadBulkFile(exports, format);
                 return exports;
             }
@@ -195,26 +193,26 @@ class WorkflowExportManager {
     async downloadFile(exportedData, workflowId, format) {
         try {
             // Créer un blob avec le contenu
-            const blob = new Blob([exportedData.content], { 
-                type: exportedData.mimeType || 'text/plain' 
+            const blob = new Blob([exportedData.content], {
+                type: exportedData.mimeType || 'text/plain'
             });
-            
+
             // Créer une URL temporaire
             const url = URL.createObjectURL(blob);
-            
+
             // Déclencher le téléchargement
             const link = document.createElement('a');
             link.href = url;
             link.download = exportedData.filename || `workflow-${workflowId}.${format}`;
             link.style.display = 'none';
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             // Nettoyer l'URL temporaire
             URL.revokeObjectURL(url);
-            
+
         } catch (error) {
             console.error('Erreur lors du téléchargement:', error);
             throw error;
@@ -224,7 +222,7 @@ class WorkflowExportManager {
     async downloadBulkFile(exports, format) {
         const timestamp = this.getTimestamp();
         const zipContent = await this.createZipContent(exports, format);
-        
+
         const exportedData = {
             filename: `workflows-${format}-${timestamp}.zip`,
             content: zipContent,
@@ -237,13 +235,13 @@ class WorkflowExportManager {
     async createZipContent(exports, format) {
         // Simulation de création ZIP - en production, utiliser JSZip
         let zipContent = '';
-        
+
         exports.forEach(exp => {
             zipContent += `\n--- ${exp.title} (${exp.workflowId}) ---\n`;
             zipContent += typeof exp.data === 'string' ? exp.data : JSON.stringify(exp.data, null, 2);
             zipContent += '\n\n';
         });
-        
+
         return zipContent;
     }
 
@@ -260,11 +258,11 @@ class WorkflowExportManager {
         if (!workflowData.workflow) {
             throw new Error('Données de workflow manquantes');
         }
-        
+
         if (!workflowData.actions || workflowData.actions.length === 0) {
             throw new Error('Aucune action à exporter');
         }
-        
+
         return true;
     }
 }
@@ -296,13 +294,13 @@ class JsonFormatter {
 class CsvFormatter {
     async format(workflowData, options) {
         const actions = workflowData.actions || [];
-        
+
         // Headers CSV
         const headers = [
-            'sequence_number', 'timestamp', 'type', 'element_tag', 
+            'sequence_number', 'timestamp', 'type', 'element_tag',
             'element_id', 'element_class', 'text_content', 'url'
         ];
-        
+
         // Convertir les actions en lignes CSV
         const rows = actions.map(action => [
             action.sequenceNumber || '',

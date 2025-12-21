@@ -28,6 +28,33 @@ class EventRecorder {
         });
 
         console.log('🎬 Workflow Recorder - Content script initialisé');
+
+        // Vérifier si un enregistrement est en cours (pour les navigations)
+        this.checkRecordingState();
+    }
+
+    async checkRecordingState() {
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'GET_RECORDING_STATE'
+            });
+
+            if (response && response.isRecording) {
+                console.log('📼 Enregistrement en cours détecté après navigation');
+
+                // Attendre que la page soit complètement chargée avant de démarrer
+                if (document.readyState === 'complete') {
+                    this.startRecording();
+                } else {
+                    window.addEventListener('load', () => {
+                        console.log('📄 Page chargée, démarrage de l\'enregistrement');
+                        this.startRecording();
+                    }, { once: true });
+                }
+            }
+        } catch (error) {
+            console.debug('Impossible de vérifier l\'état d\'enregistrement:', error);
+        }
     }
 
     handleMessage(message) {
@@ -157,13 +184,21 @@ class EventRecorder {
         // Analyse de l'élément cliqué
         const actionData = this.analyzeClickedElement(event.target, event);
 
+        // Capturer l'URL actuelle pour détecter les navigations
+        const urlAtClick = window.location.href;
+
         // Envoi asynchrone pour ne pas bloquer l'interface
         setTimeout(() => {
             this.sendToServiceWorker('ACTION_CAPTURED', actionData);
-            
+
             // Phase 4 : Capturer automatiquement l'état après l'action
+            // Mais seulement si on est toujours sur la même page (pas de navigation)
             setTimeout(() => {
-                this.captureCurrentState();
+                if (window.location.href === urlAtClick) {
+                    this.captureCurrentState();
+                } else {
+                    console.log('⏭️ État non capturé après clic : navigation détectée');
+                }
             }, 500); // Attendre que la page se stabilise après un clic
         }, 0);
     }

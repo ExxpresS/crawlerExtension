@@ -11,7 +11,7 @@
         <header>
             <h1>🎬 Workflow Recorder</h1>
         </header>
-        
+
         <main>
             <!-- Mode Idle -->
             <div id="idle-mode" class="mode">
@@ -21,19 +21,19 @@
                 <button id="start-btn" class="btn btn-primary">
                     🔴 Démarrer l'enregistrement
                 </button>
-                
+
                 <section class="recent-workflows">
                     <h3>Derniers workflows</h3>
                     <div id="recent-list">
                         <p class="empty-state">Aucun workflow enregistré</p>
                     </div>
                 </section>
-                
+
                 <section class="stats">
                     <p>Total workflows : <span id="total-count">0</span></p>
                 </section>
             </div>
-            
+
             <!-- Mode Recording -->
             <div id="recording-mode" class="mode hidden">
                 <div class="status recording">
@@ -42,7 +42,7 @@
                         <span id="recording-timer">00:00</span>
                     </div>
                 </div>
-                
+
                 <div class="counters">
                     <div class="counter">
                         <span class="label">Actions :</span>
@@ -53,7 +53,7 @@
                         <span id="state-count">0</span>
                     </div>
                 </div>
-                
+
                 <div class="recording-controls">
                     <button id="stop-btn" class="btn btn-primary">
                         ⏹ Arrêter l'enregistrement
@@ -63,13 +63,13 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Mode Review -->
             <div id="review-mode" class="mode hidden">
                 <div class="status">
                     <h2>✅ Workflow capturé avec succès</h2>
                 </div>
-                
+
                 <div class="summary">
                     <div class="summary-stats">
                         <div class="stat">
@@ -86,20 +86,20 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <form id="workflow-form">
                     <div class="form-group">
                         <label for="workflow-title">Titre du workflow *</label>
                         <input type="text" id="workflow-title" required placeholder="Ex: Créer une facture client">
                         <div class="help-text">Décrivez le but principal de ce workflow</div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="workflow-description">Description</label>
                         <textarea id="workflow-description" rows="3" placeholder="Description détaillée du processus, contexte, prérequis..."></textarea>
                         <div class="help-text">Ajoutez des détails pour aider à comprendre ce workflow</div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="workflow-tags">Tags</label>
                         <input type="text" id="workflow-tags" placeholder="facturation, client, vente">
@@ -107,14 +107,14 @@
                         <div id="suggested-tags" class="suggested-tags"></div>
                     </div>
                 </form>
-                
+
                 <div class="review-preview">
                     <h4>📋 Aperçu du parcours</h4>
                     <div id="workflow-preview" class="workflow-steps">
                         <!-- Étapes générées dynamiquement -->
                     </div>
                 </div>
-                
+
                 <div class="review-controls">
                     <button id="save-btn" class="btn btn-primary">
                         💾 Sauvegarder le workflow
@@ -124,22 +124,22 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Mode Liste des workflows -->
             <div id="list-mode" class="mode hidden">
                 <div class="list-header">
                     <h2>📚 Workflows sauvegardés</h2>
                     <button id="back-to-idle" class="btn btn-secondary">← Retour</button>
                 </div>
-                
+
                 <div class="search-section">
                     <input type="search" id="search-workflows" placeholder="Rechercher un workflow...">
                 </div>
-                
+
                 <div id="workflows-list" class="workflows-list">
                     <!-- Liste générée dynamiquement -->
                 </div>
-                
+
                 <div class="list-actions">
                     <button id="export-all" class="btn btn-secondary">📥 Exporter tout</button>
                     <button id="clear-all" class="btn btn-secondary">🗑 Tout supprimer</button>
@@ -163,30 +163,20 @@
                         <span class="format-name">JSON</span>
                         <span class="format-desc">Format standard structuré</span>
                     </button>
-                    <button class="export-format-btn" data-format="csv">
-                        <span class="format-icon">📊</span>
-                        <span class="format-name">CSV</span>
-                        <span class="format-desc">Tableau des actions</span>
-                    </button>
                     <button class="export-format-btn" data-format="pdf">
                         <span class="format-icon">📑</span>
                         <span class="format-name">PDF/HTML</span>
                         <span class="format-desc">Guide visuel</span>
-                    </button>
-                    <button class="export-format-btn" data-format="rag">
-                        <span class="format-icon">🤖</span>
-                        <span class="format-name">RAG</span>
-                        <span class="format-desc">Optimisé pour IA/LLM</span>
                     </button>
                     <button class="export-format-btn" data-format="selenium">
                         <span class="format-icon">🔧</span>
                         <span class="format-name">Selenium</span>
                         <span class="format-desc">Script de test automatisé</span>
                     </button>
-                    <button class="export-format-btn" data-format="documentation">
-                        <span class="format-icon">📝</span>
-                        <span class="format-name">Documentation</span>
-                        <span class="format-desc">Guide lisible Markdown</span>
+                    <button class="export-format-btn" data-format="api">
+                        <span class="format-icon">🌐</span>
+                        <span class="format-name">API</span>
+                        <span class="format-desc">Envoyer vers l'API</span>
                     </button>
                 </div>
             </div>
@@ -209,8 +199,6 @@
     </div>
 
     <script src="../background/db-manager.js"></script>
-    <script src="../export/rag-formatter.js"></script>
-    <script src="../export/documentation-formatter.js"></script>
     <script src="../export/export-manager.js"></script>
     <script src="popup.js"></script>
 </body>

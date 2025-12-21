@@ -42,7 +42,6 @@ This is a Chrome Manifest V3 extension called "Workflow Recorder" that captures 
 **Export System** (`export/export-manager.js`, `export/rag-formatter.js`)
 - Multi-format export: JSON, CSV, HTML (PDF-ready), Selenium Python scripts
 - `WorkflowExportManager` coordinates exports
-- `RagFormatter` creates RAG-optimized documentation
 
 ### Data Flow
 
