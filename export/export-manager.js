@@ -926,7 +926,8 @@ class RagHtmlFormatter {
         const description = this.getActionDescription(action);
         const parentContext = this.extractParentContext(action);
         const target = action.target || {};
-        const parent = target.parent;
+        const textContext = target.textContext;
+        const parent = textContext?.parent;
 
         // Construire les détails de l'élément
         let targetDetails = `Élément: <strong>${this.escapeHtml(target.tagName || 'N/A')}</strong>`;
@@ -935,12 +936,15 @@ class RagHtmlFormatter {
             targetDetails += ` - Label: "${this.escapeHtml(target.label)}"`;
         } else if (target.textContent && target.textContent.trim()) {
             targetDetails += ` - Texte: "${this.escapeHtml(target.textContent.substring(0, 100))}"`;
-        } else if (parent?.text) {
-            targetDetails += ` - Texte parent: "${this.escapeHtml(parent.text)}"`;
+        } else if (parent) {
+            const parentText = parent.text?.trim() || parent.dataOriginalTitle?.trim() || parent.title?.trim() || parent.ariaLabel?.trim();
+            if (parentText) {
+                targetDetails += ` - Texte parent: "${this.escapeHtml(parentText)}"`;
+            }
         }
 
         // Ajouter le niveau du parent si disponible
-        if (parent?.level) {
+        if (parent?.level !== undefined) {
             targetDetails += ` <span style="color: #718096; font-size: 0.85em;">(niveau ${parent.level})</span>`;
         }
 
@@ -966,15 +970,27 @@ class RagHtmlFormatter {
 
     getActionDescription(action) {
         const target = action.target || {};
-        const parent = target.parent;
+        const textContext = target.textContext;
+        const direct = textContext?.direct;
+        const parent = textContext?.parent;
 
         switch(action.type) {
             case 'click':
-                // Utiliser le texte du parent si l'élément lui-même n'a pas de texte significatif
+                // Ordre de priorité: textContent > direct context > parent context > tagName
                 let clickText = target.textContent || target.label;
+
                 if (!clickText || clickText.trim() === '' || clickText === target.tagName) {
-                    clickText = parent?.text || target.tagName || 'élément';
+                    clickText = direct?.ariaLabel || direct?.title || direct?.dataOriginalTitle;
                 }
+
+                if (!clickText || clickText.trim() === '') {
+                    clickText = parent?.text?.trim() || parent?.dataOriginalTitle?.trim() || parent?.title?.trim() || parent?.ariaLabel?.trim();
+                }
+
+                if (!clickText || clickText.trim() === '') {
+                    clickText = target.tagName || 'élément';
+                }
+
                 return `Cliquer sur "${clickText}"`;
             case 'input':
                 return `Saisir dans le champ "${target.label || target.placeholder || target.name || 'input'}"`;
@@ -998,11 +1014,13 @@ class RagHtmlFormatter {
     extractParentContext(action) {
         const contexts = [];
         const ctx = action.target?.context;
-        const parent = action.target?.parent;
+        const textContext = action.target?.textContext;
+        const parent = textContext?.parent;
 
         // Ajouter l'information du parent direct si disponible
-        if (parent?.text) {
-            contexts.push(`"${parent.text}"`);
+        const parentText = parent?.text?.trim() || parent?.dataOriginalTitle?.trim() || parent?.title?.trim() || parent?.ariaLabel?.trim();
+        if (parentText) {
+            contexts.push(`"${parentText}"`);
         }
 
         if (!ctx && contexts.length === 0) return '';
