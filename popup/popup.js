@@ -82,6 +82,15 @@ class WorkflowPopup {
         this.viewModal = document.getElementById('view-modal');
         this.closeViewModal = document.getElementById('close-view-modal');
         this.workflowDetails = document.getElementById('workflow-details');
+
+        // API Config modal elements
+        this.apiConfigModal = document.getElementById('api-config-modal');
+        this.closeApiConfigModal = document.getElementById('close-api-config-modal');
+        this.apiUrlInput = document.getElementById('api-url');
+        this.apiProjectSelect = document.getElementById('api-project');
+        this.apiProjectsError = document.getElementById('api-projects-error');
+        this.refreshProjectsBtn = document.getElementById('refresh-projects-btn');
+        this.sendToApiBtn = document.getElementById('send-to-api-btn');
     }
 
     attachEventListeners() {
@@ -113,6 +122,7 @@ class WorkflowPopup {
         // Modal events
         this.closeExportModal.addEventListener('click', () => this.hideExportModal());
         this.closeViewModal.addEventListener('click', () => this.hideViewModal());
+        this.closeApiConfigModal.addEventListener('click', () => this.hideApiConfigModal());
 
         // Close modals on backdrop click
         this.exportModal.addEventListener('click', (e) => {
@@ -127,13 +137,35 @@ class WorkflowPopup {
             }
         });
 
+        this.apiConfigModal.addEventListener('click', (e) => {
+            if (e.target === this.apiConfigModal) {
+                this.hideApiConfigModal();
+            }
+        });
+
         // Export format selection
         this.exportModal.addEventListener('click', (e) => {
             if (e.target.matches('.export-format-btn') || e.target.closest('.export-format-btn')) {
                 const btn = e.target.matches('.export-format-btn') ? e.target : e.target.closest('.export-format-btn');
                 const format = btn.dataset.format;
-                this.performExport(format);
+
+                // Cas spécial : API - ouvrir la modale de configuration
+                if (format === 'api') {
+                    this.hideExportModal(false); // Ne pas réinitialiser l'ID du workflow
+                    this.showApiConfigModal();
+                } else {
+                    this.performExport(format);
+                }
             }
+        });
+
+        // API Config events
+        this.refreshProjectsBtn.addEventListener('click', () => this.loadApiProjects());
+        this.sendToApiBtn.addEventListener('click', () => this.sendWorkflowToApi());
+        this.apiUrlInput.addEventListener('input', () => this.loadApiProjects());
+        this.apiProjectSelect.addEventListener('change', () => {
+            // Activer le bouton d'envoi si un projet est sélectionné
+            this.sendToApiBtn.disabled = !this.apiProjectSelect.value;
         });
 
         // Listen for messages from service worker
@@ -631,12 +663,19 @@ class WorkflowPopup {
 
             // Export d'un workflow spécifique ou tous ?
             if (this.currentExportWorkflowId) {
-                await this.exportManager.exportWorkflow(
+                const result = await this.exportManager.exportWorkflow(
                     this.currentExportWorkflowId,
                     format,
                     { pretty: true }
                 );
-                console.log(`✅ Export ${format} réussi`);
+
+                // Cas spécial pour l'API : afficher un message de succès
+                if (format === 'api' && result && result.success) {
+                    alert(`✅ ${result.message}\n\nLe workflow a été envoyé avec succès à l'API.`);
+                    console.log(`✅ Export API réussi:`, result);
+                } else {
+                    console.log(`✅ Export ${format} réussi`);
+                }
             } else {
                 // Export de tous les workflows
                 await this.exportManager.exportAllWorkflows(format, { pretty: true });
@@ -784,9 +823,11 @@ class WorkflowPopup {
         this.exportModal.classList.remove('hidden');
     }
 
-    hideExportModal() {
+    hideExportModal(resetWorkflowId = true) {
         this.exportModal.classList.add('hidden');
-        this.currentExportWorkflowId = null;
+        if (resetWorkflowId) {
+            this.currentExportWorkflowId = null;
+        }
     }
 
     showViewModal() {
@@ -795,6 +836,126 @@ class WorkflowPopup {
 
     hideViewModal() {
         this.viewModal.classList.add('hidden');
+    }
+
+    showApiConfigModal() {
+        this.apiConfigModal.classList.remove('hidden');
+        this.loadApiProjects();
+    }
+
+    hideApiConfigModal() {
+        this.apiConfigModal.classList.add('hidden');
+        // Réinitialiser l'ID du workflow si on ferme sans envoyer
+        if (this.currentExportWorkflowId) {
+            this.currentExportWorkflowId = null;
+        }
+    }
+
+    async loadApiProjects() {
+        try {
+            const apiUrl = this.apiUrlInput.value.trim();
+
+            if (!apiUrl) {
+                this.showApiProjectsError('Veuillez entrer une URL d\'API valide');
+                return;
+            }
+
+            // Désactiver le select pendant le chargement
+            this.apiProjectSelect.disabled = true;
+            this.sendToApiBtn.disabled = true;
+            this.apiProjectSelect.innerHTML = '<option value="">Chargement...</option>';
+            this.hideApiProjectsError();
+
+            // Charger les projets
+            const projects = await this.exportManager.fetchProjects(apiUrl);
+
+            if (!projects || projects.length === 0) {
+                this.showApiProjectsError('Aucun projet disponible dans l\'API');
+                this.apiProjectSelect.innerHTML = '<option value="">Aucun projet disponible</option>';
+                return;
+            }
+
+            // Remplir le select avec les projets
+            this.apiProjectSelect.innerHTML = '<option value="">-- Sélectionnez un projet --</option>';
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.name}${project.description ? ' - ' + project.description : ''}`;
+                this.apiProjectSelect.appendChild(option);
+            });
+
+            // Réactiver le select
+            this.apiProjectSelect.disabled = false;
+            this.hideApiProjectsError();
+
+            console.log(`✅ ${projects.length} projet(s) chargé(s)`);
+
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement des projets:', error);
+            this.showApiProjectsError(error.message);
+            this.apiProjectSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+            this.apiProjectSelect.disabled = true;
+        }
+    }
+
+    showApiProjectsError(message) {
+        this.apiProjectsError.textContent = message;
+        this.apiProjectsError.classList.remove('hidden');
+    }
+
+    hideApiProjectsError() {
+        this.apiProjectsError.classList.add('hidden');
+    }
+
+    async sendWorkflowToApi() {
+        try {
+            const projectId = parseInt(this.apiProjectSelect.value);
+            const apiUrl = this.apiUrlInput.value.trim();
+
+            if (!projectId) {
+                alert('Veuillez sélectionner un projet');
+                return;
+            }
+
+            if (!this.currentExportWorkflowId) {
+                alert('Aucun workflow sélectionné');
+                return;
+            }
+
+            // Désactiver le bouton pendant l'envoi
+            this.sendToApiBtn.disabled = true;
+            this.sendToApiBtn.textContent = '📤 Envoi en cours...';
+
+            console.log(`📤 Envoi du workflow ${this.currentExportWorkflowId} au projet ${projectId}...`);
+
+            // Envoyer à l'API
+            const result = await this.exportManager.exportWorkflow(
+                this.currentExportWorkflowId,
+                'api',
+                {
+                    apiBaseUrl: apiUrl,
+                    projectId: projectId
+                }
+            );
+
+            // Afficher le succès
+            if (result && result.success) {
+                alert(`✅ ${result.message}\n\nLe workflow a été envoyé avec succès à l'API.`);
+                console.log(`✅ Export API réussi:`, result);
+
+                // Fermer les modales
+                this.hideApiConfigModal();
+                this.currentExportWorkflowId = null;
+            }
+
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'envoi à l\'API:', error);
+            alert(`Erreur lors de l'envoi à l'API:\n${error.message}`);
+        } finally {
+            // Réactiver le bouton
+            this.sendToApiBtn.disabled = false;
+            this.sendToApiBtn.textContent = '📤 Envoyer à l\'API';
+        }
     }
     
     async deleteWorkflow(workflowId) {

@@ -22,6 +22,11 @@ class WorkflowExportManager {
                 throw new Error(`Workflow ${workflowId} non trouvé`);
             }
 
+            // Cas spécial : envoi à l'API
+            if (format === 'api') {
+                return await this.sendToAPI(workflowData, options);
+            }
+
             // Formater selon le format demandé
             const formatter = this.formatters[format];
             if (!formatter) {
@@ -248,6 +253,132 @@ class WorkflowExportManager {
 
     getTimestamp() {
         return new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+    }
+
+    async sendToAPI(workflowData, options = {}) {
+        try {
+            console.log('🌐 Envoi du workflow à l\'API...');
+
+            // Configuration de l'API
+            const apiBaseUrl = options.apiBaseUrl || 'http://localhost:8001/api/v1';
+            const projectId = options.projectId || 1;
+
+            // Générer le Markdown RAG
+            const ragFormatter = this.formatters.raghtml;
+            const { content: markdownContent } = await ragFormatter.format(workflowData, options);
+
+            // Extraire les informations du workflow
+            const workflow = workflowData.workflow;
+            const metadata = workflow.metadata || {};
+
+            // Extraire l'URL et le domain
+            const url = metadata.startUrl || '';
+            const domain = url ? new URL(url).hostname : 'unknown';
+
+            // Générer le hash unique
+            const hashInput = `${domain}-${workflow.title}-${workflow.id}-${metadata.createdAt}`;
+            const workflowHash = await this.generateHash(hashInput);
+
+            // Préparer les données pour l'API
+            const apiData = {
+                project_id: projectId,
+                name: workflow.title,
+                description: workflow.description || '',
+                url: url,
+                domain: domain,
+                duration_ms: metadata.duration || 0,
+                workflow_hash: workflowHash,
+                raw_data: {
+                    markdown_content: markdownContent,
+                    source: 'workflow_recorder',
+                    version: '1.0',
+                    workflow_id: workflow.id,
+                    created_at: metadata.createdAt,
+                    action_count: metadata.actionCount || 0,
+                    state_count: metadata.stateCount || 0,
+                    tags: workflow.tags || []
+                },
+                states: [],
+                actions: []
+            };
+
+            // Envoyer à l'API
+            console.log('📤 Envoi vers:', `${apiBaseUrl}/workflows/`);
+
+            const response = await fetch(`${apiBaseUrl}/workflows/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(apiData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+
+                if (response.status === 409) {
+                    throw new Error('Ce workflow existe déjà dans l\'API (hash en doublon)');
+                } else if (response.status === 404) {
+                    throw new Error(`Projet ${projectId} introuvable dans l'API`);
+                } else {
+                    throw new Error(`Erreur API (${response.status}): ${errorData.detail || response.statusText}`);
+                }
+            }
+
+            const result = await response.json();
+            console.log('✅ Workflow envoyé à l\'API avec succès:', result);
+
+            return {
+                success: true,
+                workflowId: result.id,
+                message: `Workflow envoyé avec succès (ID API: ${result.id})`,
+                apiResponse: result
+            };
+
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'envoi à l\'API:', error);
+
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Impossible de joindre l\'API. Vérifiez que le serveur est démarré sur http://localhost:8001');
+            }
+
+            throw error;
+        }
+    }
+
+    async generateHash(input) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(input);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
+    }
+
+    async fetchProjects(apiBaseUrl) {
+        try {
+            console.log('📡 Récupération de la liste des projets...');
+
+            const response = await fetch(`${apiBaseUrl}/projects/`);
+
+            if (!response.ok) {
+                throw new Error(`Erreur API (${response.status}): ${response.statusText}`);
+            }
+
+            const projects = await response.json();
+            console.log(`✅ ${projects.length} projet(s) récupéré(s)`);
+
+            return projects;
+
+        } catch (error) {
+            console.error('❌ Erreur lors de la récupération des projets:', error);
+
+            if (error.message.includes('Failed to fetch')) {
+                throw new Error('Impossible de joindre l\'API. Vérifiez que le serveur est démarré.');
+            }
+
+            throw error;
+        }
     }
 
     // Méthodes utilitaires

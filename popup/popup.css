@@ -736,3 +736,30 @@ main {
         gap: 4px;
     }
 }
+
+/* Messages d'erreur */
+.error-message {
+    background-color: #fed7d7;
+    color: #c53030;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    font-size: 12px;
+    border-left: 4px solid #fc8181;
+}
+
+.error-message.hidden {
+    display: none;
+}
+
+/* Actions de la modale */
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-actions .btn {
+    flex: 1;
+    margin-bottom: 0;
+}

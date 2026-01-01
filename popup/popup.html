@@ -203,6 +203,40 @@
         </div>
     </div>
 
+    <!-- Modale de configuration API -->
+    <div id="api-config-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🌐 Configuration API</h3>
+                <button class="modal-close" id="close-api-config-modal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="api-url">URL de l'API</label>
+                    <input type="text" id="api-url" value="http://localhost:8001/api/v1" placeholder="http://localhost:8001/api/v1">
+                    <div class="help-text">URL de base de votre API Workflow Manager</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="api-project">Projet</label>
+                    <select id="api-project" disabled>
+                        <option value="">Chargement...</option>
+                    </select>
+                    <div class="help-text">Sélectionnez le projet de destination</div>
+                </div>
+
+                <div id="api-projects-error" class="error-message hidden">
+                    Erreur lors du chargement des projets
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button id="refresh-projects-btn" class="btn btn-secondary">🔄 Actualiser les projets</button>
+                    <button id="send-to-api-btn" class="btn btn-primary" disabled>📤 Envoyer à l'API</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="../background/db-manager.js"></script>
     <script src="../export/json-formatter.js"></script>
     <script src="../export/export-manager.js"></script>
