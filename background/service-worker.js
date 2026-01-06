@@ -20,6 +20,9 @@ class WorkflowRecorder {
         this.lastCapturedStateId = null;  // ID du dernier state capturé
         this.pendingAction = null;         // Action en attente de lien avec state suivant
 
+        // ID de l'onglet actif en cours d'enregistrement
+        this.activeTabId = null;
+
         this.initializeServiceWorker();
     }
 
@@ -58,6 +61,7 @@ class WorkflowRecorder {
         // Reset any ongoing recording on extension restart
         this.isRecording = false;
         this.currentWorkflow = null;
+        this.activeTabId = null;
         this.resetRecordingState();
 
         // Clear any recording badge
@@ -119,6 +123,12 @@ class WorkflowRecorder {
                 // Messages from content scripts
                 case 'ACTION_CAPTURED':
                     if (this.isRecording) {
+                        // Ignorer les messages des onglets qui ne sont pas celui en cours d'enregistrement
+                        if (sender.tab && sender.tab.id !== this.activeTabId) {
+                            console.debug(`🚫 Action ignorée de l'onglet ${sender.tab.id} (onglet actif: ${this.activeTabId})`);
+                            sendResponse({ success: false, reason: 'wrong_tab' });
+                            break;
+                        }
                         this.handleActionCaptured(message.data);
                         sendResponse({ success: true });
                     }
@@ -126,6 +136,12 @@ class WorkflowRecorder {
 
                 case 'STATE_CAPTURED':
                     if (this.isRecording) {
+                        // Ignorer les messages des onglets qui ne sont pas celui en cours d'enregistrement
+                        if (sender.tab && sender.tab.id !== this.activeTabId) {
+                            console.debug(`🚫 État ignoré de l'onglet ${sender.tab.id} (onglet actif: ${this.activeTabId})`);
+                            sendResponse({ success: false, reason: 'wrong_tab' });
+                            break;
+                        }
                         this.handleStateCaptured(message.data);
                         sendResponse({ success: true });
                     }
@@ -148,6 +164,16 @@ class WorkflowRecorder {
 
         console.log('Démarrage de l\'enregistrement...');
 
+        // Get current active tab
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs.length === 0) {
+            throw new Error('Aucun onglet actif trouvé');
+        }
+
+        // Store the active tab ID
+        this.activeTabId = tabs[0].id;
+        console.log('🎯 Enregistrement sur l\'onglet:', this.activeTabId);
+
         // Initialize recording state
         this.isRecording = true;
         this.recordingState = {
@@ -168,8 +194,8 @@ class WorkflowRecorder {
         // Notify popup
         await this.notifyPopup('RECORDING_STARTED');
 
-        // Notify content scripts in all tabs
-        await this.notifyContentScripts('RECORDING_STARTED');
+        // Notify content scripts ONLY in the active tab
+        await this.notifyContentScripts('RECORDING_STARTED', null, this.activeTabId);
     }
 
     async stopRecording() {
@@ -203,8 +229,15 @@ class WorkflowRecorder {
         // Notify popup to switch to review mode
         await this.notifyPopup('RECORDING_STOPPED', reviewData);
 
-        // Notify content scripts
-        await this.notifyContentScripts('RECORDING_STOPPED');
+        // Notify content scripts - only the active tab if we have one
+        if (this.activeTabId !== null) {
+            await this.notifyContentScripts('RECORDING_STOPPED', null, this.activeTabId);
+        } else {
+            await this.notifyContentScripts('RECORDING_STOPPED');
+        }
+
+        // Reset active tab ID
+        this.activeTabId = null;
     }
 
     async cancelRecording() {
@@ -228,8 +261,15 @@ class WorkflowRecorder {
         // Notify popup
         await this.notifyPopup('RECORDING_CANCELLED');
 
-        // Notify content scripts
-        await this.notifyContentScripts('RECORDING_CANCELLED');
+        // Notify content scripts - only the active tab if we have one
+        if (this.activeTabId !== null) {
+            await this.notifyContentScripts('RECORDING_CANCELLED', null, this.activeTabId);
+        } else {
+            await this.notifyContentScripts('RECORDING_CANCELLED');
+        }
+
+        // Reset active tab ID
+        this.activeTabId = null;
     }
 
     async saveWorkflow(metadata) {
@@ -487,8 +527,24 @@ class WorkflowRecorder {
         }
     }
 
-    async notifyContentScripts(type, data = null) {
+    async notifyContentScripts(type, data = null, specificTabId = null) {
         try {
+            // Si un tabId spécifique est fourni, ne notifier que cet onglet
+            if (specificTabId !== null) {
+                try {
+                    await chrome.tabs.sendMessage(specificTabId, {
+                        type,
+                        data,
+                        timestamp: Date.now()
+                    });
+                    console.log(`📨 Notification envoyée à l'onglet ${specificTabId}`);
+                } catch (error) {
+                    console.debug(`Content script non disponible pour l'onglet ${specificTabId}:`, error.message);
+                }
+                return;
+            }
+
+            // Sinon, notifier tous les onglets (comportement par défaut)
             const tabs = await chrome.tabs.query({});
 
             for (const tab of tabs) {
